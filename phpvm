@@ -52,6 +52,7 @@ mkdir -p /var/cache/phpvm
 # Track some variables
 cmd=list
 target="7.2.7"
+install_deps=0
 
 # Parse args
 while [[ "$#" -gt 0 ]]; do
@@ -66,6 +67,9 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     --help)
       cmd="help"
+      ;;
+    --install-dependencies)
+      install_deps=1
       ;;
   esac
   shift
@@ -89,6 +93,13 @@ for SUPPORT in ${SUPPORTS[@]}; do
   CONFOPTS="${CONFOPTS} --with-${SUPPORT}"
 done
 
+detect_package_manager() {
+  if [ -f /etc/apk/repositories ];
+    echo "alpine"
+  else
+    echo "unknown"
+  fi
+}
 
 # Run command
 case "$cmd" in
@@ -106,6 +117,23 @@ case "$cmd" in
     rm -rf /usr/local/lib/php*
     rm -rf /usr/local/php*
     rm -rf /usr/local/sbin/php*
+
+    if [ $install_deps -gt 0 ]; then
+      case "$(detect_package_manager)" in
+        alpine)
+          apk add \
+            autoconf \
+            build-base \
+            curl-dev \
+            icu-dev \
+            libmemcached-dev \
+            libxml2-dev \
+            openssl-dev \
+            postgresql-dev \
+            ;
+          ;;
+      esac
+    fi
 
     # Download tarball if missing
     tarball="/var/cache/phpvm/php-${target}.tar.gz"
