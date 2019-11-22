@@ -164,11 +164,11 @@ case "$cmd" in
 
     # Download/update memcached repo
     [ -d "/usr/src/phpvm/ext-memcached" ] && {
-      cd /usr/src/phpvm/ext-memcached
+      cd /usr/src/phpvm/ext-memcached || exit 1
       git fetch --all --tags || exit 1
     } || {
       git clone https://github.com/php-memcached-dev/php-memcached /usr/src/phpvm/ext-memcached || exit 1
-      cd /usr/src/phpvm/ext-memcached
+      cd /usr/src/phpvm/ext-memcached || exit 1
       git fetch --all --tags || exit 1
     }
 
@@ -188,38 +188,28 @@ case "$cmd" in
     make install || exit 1
     echo "extension=memcached.so" >> /usr/local/lib/php.ini
 
-    # Handle old ext-memcache
-    if [ "${major}" -lt 7 ]; then
+    # Download/update memcache repo
+    [ -d "/usr/src/phpvm/ext-memcache" ] && {
+      cd /usr/src/phpvm/ext-memcache || exit 1
+      git fetch --all || exit 1
+    } || {
+      git clone https://github.com/websupport-sk/pecl-memcache /usr/src/phpvm/ext-memcache || exit 1
+      cd /usr/src/phpvm/ext-memcache || exit 1
+      git fetch --all || exit 1
+    }
 
-      # <7 = pecl
-      printf "\n" | pecl install memcache || exit 1
-      echo "extension=memcache.so" >> /usr/local/lib/php.ini
+    # Go to the ext-memcache source
+    cd /usr/src/phpvm/ext-memcached || exit 1
+    git checkout "NON_BLOCKING_IO_php${major}" || exit 1
+    git pull || exit 1
 
-    else
+    # Compile & install ext-memcache
+    printf "\n" | phpize || exit 1
+    printf "\n" | ./configure --enable-memcache || exit 1
+    make $MAKEOPTS || exit 1
+    make install || exit 1
+    echo "extension=memcache.so" >> /usr/local/lib/php.ini
 
-      # Download/update memcache repo
-      [ -d "/usr/src/phpvm/ext-memcache" ] && {
-        cd /usr/src/phpvm/ext-memcache
-        git fetch --all
-      } || {
-        git clone https://github.com/websupport-sk/pecl-memcache /usr/src/phpvm/ext-memcache
-        cd /usr/src/phpvm/ext-memcache
-        git fetch --all
-      }
-
-      # Go to the ext-memcache source
-      cd /usr/src/phpvm/ext-memcached
-      git checkout "NON_BLOCKING_IO_php${major}"
-      git pull
-
-      # Compile & install ext-memcache
-      printf "\n" | phpize || exit 1
-      printf "\n" | ./configure --enable-memcache || exit 1
-      make $MAKEOPTS || exit 1
-      make install || exit 1
-      echo "extension=memcache.so" >> /usr/local/lib/php.ini
-
-    fi
 
     # Download/update mongodb repo
     [ -d "/usr/src/phpvm/ext-mongodb" ] && {
