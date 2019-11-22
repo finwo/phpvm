@@ -179,12 +179,12 @@ case "$cmd" in
     git pull
 
     # Compile & install ext-memcached
-    if [ "${major}" -eq 5 ]; then
+    if [ "${major}" -lt 7 ]; then
       git checkout REL2_0
       git branch --set-upstream-to=origin/REL2_0
     else
-      git checkout "php${major}"
-      git branch "--set-upstream-to=origin/php${major}"
+      git checkout master
+      git branch --set-upstream-to=master
     fi
     printf "\n" | phpize
     printf "\n" | ./configure --disable-memcached-sasl
