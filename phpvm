@@ -94,7 +94,7 @@ for SUPPORT in ${SUPPORTS[@]}; do
 done
 
 detect_package_manager() {
-  if [ -f /etc/apk/repositories ];
+  if [ -f /etc/apk/repositories ]; then
     echo "alpine"
   else
     echo "unknown"
