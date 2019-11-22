@@ -109,6 +109,7 @@ case "$cmd" in
     ls /usr/src/phpvm/ | grep "php-"
     ;;
   use)
+
     rm -rf /usr/local/bin/pear*
     rm -rf /usr/local/bin/pecl*
     rm -rf /usr/local/bin/phar*
@@ -127,10 +128,13 @@ case "$cmd" in
             autoconf \
             build-base \
             curl-dev \
+            gearman-dev \
             git \
+            grep \
             icu-dev \
             libmemcached-dev \
             libxml2-dev \
+            mlocate \
             openssl-dev \
             postgresql-dev \
             ;
@@ -220,7 +224,6 @@ case "$cmd" in
     make install
     echo "extension=memcache.so" >> /usr/local/lib/php.ini
 
-
     # Download/update mongodb repo
     [ -d "/usr/src/phpvm/ext-mongodb" ] && {
       cd /usr/src/phpvm/ext-mongodb
@@ -283,6 +286,50 @@ case "$cmd" in
     make ${MAKEOPTS}
     make install
     echo "extension=phalcon.so" >> /usr/local/lib/php.ini
+
+    # Download/update gearman repo
+    [ -d "/usr/src/phpvm/ext-gearman" ] && {
+      cd /usr/src/phpvm/ext-gearman
+      git fetch --all --tags
+    } || {
+      git clone https://github.com/wcgallego/pecl-gearman /usr/src/phpvm/ext-gearman
+      cd /usr/src/phpvm/ext-gearman
+      git fetch --all --tags
+    }
+
+    # Ensure libgearman
+    updatedb
+    locate gearman.h | grep -E '^(\/usr(\/local)?)?\/include' || {
+
+      # Download tarball if missing
+      gmversion=$(version gearman/gearmand)
+      tarball="/var/cache/phpvm/lib-gearman-${gmversion}.tar.gz"
+      [ -f "${tarball}" ] || {
+        curl -L "https://github.com/gearman/gearmand/releases/download/${gmversion}/gearmand-${gmversion}.tar.gz" > "${tarball}" || {
+          rm -rf "${tarball}"
+          break
+        }
+      }
+
+      # unpack libgearman
+      mkdir -p /usr/src/phpvm/lib-gearman
+      tar xzf "${tarball}" --overwrite --strip-components=1 -C "/usr/src/phpvm/lib-gearman"
+
+      cd /usr/src/phpvm/lib-gearman
+      ./configure
+      make ${MAKEOPTS}
+      make install
+    }
+
+    # Build and install gearman
+    cd /usr/src/phpvm/ext-gearman
+    git pull
+    phpize
+    ./configure
+    make clean
+    make ${MAKEOPTS}
+    make install
+    echo "extension=gearman.so" >> /usr/local/lib/php.ini
 
    ;;
   help)
