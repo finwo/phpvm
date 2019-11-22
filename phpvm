@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Hard-crash everything
+set -e
+
 # Ensure we're running as root
 if [[ $EUID -ne 0 ]]; then
   echo "This script must be run as root"
@@ -146,8 +149,8 @@ case "$cmd" in
 
     # Build if not done yet
     [ -d "/usr/src/phpvm/php-${target}" ] || {
-      tar xzf "${tarball}" -C "/usr/src/phpvm" || exit 1
-      cd "/usr/src/phpvm/php-${target}" || exit 1
+      tar xzf "${tarball}" -C "/usr/src/phpvm"
+      cd "/usr/src/phpvm/php-${target}"
 
       ./configure ${CONFOPTS} \
         && make ${MAKEOPTS} || {
@@ -158,127 +161,127 @@ case "$cmd" in
     }
 
     # Install chosen version
-    cd "/usr/src/phpvm/php-${target}" || exit 1
-    make install || exit 1
+    cd "/usr/src/phpvm/php-${target}"
+    make install
 
     # Download/update memcached repo
     [ -d "/usr/src/phpvm/ext-memcached" ] && {
-      cd /usr/src/phpvm/ext-memcached || exit 1
-      git fetch --all --tags || exit 1
+      cd /usr/src/phpvm/ext-memcached
+      git fetch --all --tags
     } || {
-      git clone https://github.com/php-memcached-dev/php-memcached /usr/src/phpvm/ext-memcached || exit 1
-      cd /usr/src/phpvm/ext-memcached || exit 1
-      git fetch --all --tags || exit 1
+      git clone https://github.com/php-memcached-dev/php-memcached /usr/src/phpvm/ext-memcached
+      cd /usr/src/phpvm/ext-memcached
+      git fetch --all --tags
     }
 
     # Go to the ext-memcached source
-    cd /usr/src/phpvm/ext-memcached || exit 1
-    git pull || exit 1
+    cd /usr/src/phpvm/ext-memcached
+    git pull
 
     # Compile & install ext-memcached
     if [ "${major}" -eq 5 ]; then
-      git checkout REL2_0 || exit 1
-      git branch --set-upstream-to=origin/REL2_0 || exit 1
+      git checkout REL2_0
+      git branch --set-upstream-to=origin/REL2_0
     else
-      git checkout "php${major}" || exit 1
-      git branch "--set-upstream-to=origin/php${major}" || exit 1
+      git checkout "php${major}"
+      git branch "--set-upstream-to=origin/php${major}"
     fi
-    printf "\n" | phpize || exit 1
-    printf "\n" | ./configure --disable-memcached-sasl || exit 1
-    make $MAKEOPTS || exit 1
-    make install || exit 1
+    printf "\n" | phpize
+    printf "\n" | ./configure --disable-memcached-sasl
+    make $MAKEOPTS
+    make install
     echo "extension=memcached.so" >> /usr/local/lib/php.ini
 
     # Download/update memcache repo
     [ -d "/usr/src/phpvm/ext-memcache" ] && {
-      cd /usr/src/phpvm/ext-memcache || exit 1
-      git fetch --all || exit 1
+      cd /usr/src/phpvm/ext-memcache
+      git fetch --all
     } || {
-      git clone https://github.com/websupport-sk/pecl-memcache /usr/src/phpvm/ext-memcache || exit 1
-      cd /usr/src/phpvm/ext-memcache || exit 1
-      git fetch --all || exit 1
+      git clone https://github.com/websupport-sk/pecl-memcache /usr/src/phpvm/ext-memcache
+      cd /usr/src/phpvm/ext-memcache
+      git fetch --all
     }
 
     # Go to the ext-memcache source
-    cd /usr/src/phpvm/ext-memcache || exit 1
+    cd /usr/src/phpvm/ext-memcache
     if [ $major -lt 7 ]; then
-      git checkout NON_BLOCKING_IO || exit 1
-      git branch --set-upstream-to=origin/NON_BLOCKING_IO || exit 1
+      git checkout NON_BLOCKING_IO
+      git branch --set-upstream-to=origin/NON_BLOCKING_IO
     else
-      git checkout "NON_BLOCKING_IO_php${major}" || exit 1
-      git branch "--set-upstream-to=origin/NON_BLOCKING_IO_php${major}" || exit 1
+      git checkout "NON_BLOCKING_IO_php${major}"
+      git branch "--set-upstream-to=origin/NON_BLOCKING_IO_php${major}"
     fi
-    git pull || exit 1
+    git pull
 
     # Compile & install ext-memcache
-    printf "\n" | phpize || exit 1
-    printf "\n" | ./configure --enable-memcache || exit 1
-    make $MAKEOPTS || exit 1
-    make install || exit 1
+    printf "\n" | phpize
+    printf "\n" | ./configure --enable-memcache
+    make $MAKEOPTS
+    make install
     echo "extension=memcache.so" >> /usr/local/lib/php.ini
 
 
     # Download/update mongodb repo
     [ -d "/usr/src/phpvm/ext-mongodb" ] && {
-      cd /usr/src/phpvm/ext-mongodb || exit 1
-      git fetch --all --tags || exit 1
+      cd /usr/src/phpvm/ext-mongodb
+      git fetch --all --tags
     } || {
-      git clone https://github.com/mongodb/mongo-php-driver /usr/src/phpvm/ext-mongodb || exit 1
-      cd /usr/src/phpvm/ext-mongodb || exit 1
-      git fetch --all --tags || exit 1
+      git clone https://github.com/mongodb/mongo-php-driver /usr/src/phpvm/ext-mongodb
+      cd /usr/src/phpvm/ext-mongodb
+      git fetch --all --tags
     }
 
     # Go to the ext-mongodb source
-    cd /usr/src/phpvm/ext-mongodb || exit 1
-    git submodule update --init --recursive --force || exit 1
-    git pull || exit 1
+    cd /usr/src/phpvm/ext-mongodb
+    git submodule update --init --recursive --force
+    git pull
 
     # Compile & install ext-mongodb
-    printf "\n" | phpize || exit 1
-    printf "\n" | ./configure || exit 1
-    make $MAKEOPTS || exit 1
-    make install || exit 1
+    printf "\n" | phpize
+    printf "\n" | ./configure
+    make $MAKEOPTS
+    make install
     echo "extension=mongodb.so" >> /usr/local/lib/php.ini
 
     # Download/update mongodb repo
     [ -d "/usr/src/phpvm/ext-psr" ] && {
-      cd /usr/src/phpvm/ext-psr || exit 1
-      git fetch --all --tags || exit 1
+      cd /usr/src/phpvm/ext-psr
+      git fetch --all --tags
     } || {
-      git clone https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr || exit 1
-      cd /usr/src/phpvm/ext-psr || exit 1
-      git fetch --all --tags || exit 1
+      git clone https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr
+      cd /usr/src/phpvm/ext-psr
+      git fetch --all --tags
     }
 
     # Go to the ext-psr source
-    cd /usr/src/phpvm/ext-psr || exit 1
-    git pull || exit 1
+    cd /usr/src/phpvm/ext-psr
+    git pull
 
     # Compile & install ext-pr
-    printf "\n" | phpize || exit 1
-    printf "\n" | ./configure || exit 1
-    make $MAKEOPTS || exit 1
-    make install || exit 1
+    printf "\n" | phpize
+    printf "\n" | ./configure
+    make $MAKEOPTS
+    make install
     echo "extension=psr.so" >> /usr/local/lib/php.ini
 
     # Download/update phalcon repo
     [ -d "/usr/src/phpvm/ext-phalcon" ] && {
-      cd /usr/src/phpvm/ext-phalcon || exit 1
-      git fetch --all --tags || exit 1
+      cd /usr/src/phpvm/ext-phalcon
+      git fetch --all --tags
     } || {
-      git clone https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon || exit 1
-      cd /usr/src/phpvm/ext-phalcon || exit 1
-      git fetch --all --tags || exit 1
+      git clone https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon
+      cd /usr/src/phpvm/ext-phalcon
+      git fetch --all --tags
     }
 
     # Build and install phalcon
     cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-    git checkout $(version phalcon/cphalcon) || exit 1
-    phpize || exit 1
-    ./configure --enable-phalcon || exit 1
-    make clean || exit 1
-    make ${MAKEOPTS} || exit 1
-    make install || exit 1
+    git checkout $(version phalcon/cphalcon)
+    phpize
+    ./configure --enable-phalcon
+    make clean
+    make ${MAKEOPTS}
+    make install
     echo "extension=phalcon.so" >> /usr/local/lib/php.ini
 
    ;;
