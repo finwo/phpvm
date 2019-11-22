@@ -125,6 +125,7 @@ case "$cmd" in
             autoconf \
             build-base \
             curl-dev \
+            git \
             icu-dev \
             libmemcached-dev \
             libxml2-dev \
