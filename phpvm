@@ -21,10 +21,9 @@ version() {
       sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
 }
 
-
-export MAKEOPTS="-j$(($(ncpu)+1))"
-export CONFOPTS=
 export CFLAGS=
+export CONFOPTS=
+export MAKEOPTS="-j$(($(ncpu)+1))"
 
 # Gentoo stuff
 if [ -f /etc/portage/make.conf ]; then
@@ -93,7 +92,7 @@ for SUPPORT in ${SUPPORTS[@]}; do
   CONFOPTS="${CONFOPTS} --with-${SUPPORT}"
 done
 
-detect_package_manager() {
+detect_distro() {
   if [ -f /etc/apk/repositories ]; then
     echo "alpine"
   else
@@ -119,7 +118,7 @@ case "$cmd" in
     rm -rf /usr/local/sbin/php*
 
     if [ $install_deps -gt 0 ]; then
-      case "$(detect_package_manager)" in
+      case "$(detect_distro)" in
         alpine)
           apk add \
             autoconf \
@@ -147,8 +146,8 @@ case "$cmd" in
 
     # Build if not done yet
     [ -d "/usr/src/phpvm/php-${target}" ] || {
-      tar xzf "${tarball}" -C "/usr/src/phpvm"
-      cd "/usr/src/phpvm/php-${target}"
+      tar xzf "${tarball}" -C "/usr/src/phpvm" || exit 1
+      cd "/usr/src/phpvm/php-${target}" || exit 1
 
       ./configure ${CONFOPTS} \
         && make ${MAKEOPTS} || {
@@ -159,7 +158,7 @@ case "$cmd" in
     }
 
     # Install chosen version
-    cd "/usr/src/phpvm/php-${target}"
+    cd "/usr/src/phpvm/php-${target}" || exit 1
     make install || exit 1
 
     # Download/update memcached repo
@@ -173,16 +172,16 @@ case "$cmd" in
     }
 
     # Go to the ext-memcached source
-    cd /usr/src/phpvm/ext-memcached
-    git pull
+    cd /usr/src/phpvm/ext-memcached || exit 1
+    git pull || exit 1
 
     # Compile & install ext-memcached
     if [ "${major}" -eq 5 ]; then
-      git checkout REL2_0
-      git branch --set-upstream-to=origin/REL2_0
+      git checkout REL2_0 || exit 1
+      git branch --set-upstream-to=origin/REL2_0 || exit 1
     else
-      git checkout "php${major}"
-      git branch "--set-upstream-to=origin/php${major}"
+      git checkout "php${major}" || exit 1
+      git branch "--set-upstream-to=origin/php${major}" || exit 1
     fi
     printf "\n" | phpize || exit 1
     printf "\n" | ./configure --disable-memcached-sasl || exit 1
@@ -204,10 +203,10 @@ case "$cmd" in
     cd /usr/src/phpvm/ext-memcache || exit 1
     if [ $major -lt 7 ]; then
       git checkout NON_BLOCKING_IO || exit 1
-      git branch --set-upstream-to=origin/NON_BLOCKING_IO
+      git branch --set-upstream-to=origin/NON_BLOCKING_IO || exit 1
     else
       git checkout "NON_BLOCKING_IO_php${major}" || exit 1
-      git branch "--set-upstream-to=origin/NON_BLOCKING_IO_php${major}"
+      git branch "--set-upstream-to=origin/NON_BLOCKING_IO_php${major}" || exit 1
     fi
     git pull || exit 1
 
@@ -221,18 +220,18 @@ case "$cmd" in
 
     # Download/update mongodb repo
     [ -d "/usr/src/phpvm/ext-mongodb" ] && {
-      cd /usr/src/phpvm/ext-mongodb
+      cd /usr/src/phpvm/ext-mongodb || exit 1
       git fetch --all --tags || exit 1
     } || {
       git clone https://github.com/mongodb/mongo-php-driver /usr/src/phpvm/ext-mongodb || exit 1
-      cd /usr/src/phpvm/ext-mongodb
+      cd /usr/src/phpvm/ext-mongodb || exit 1
       git fetch --all --tags || exit 1
     }
 
     # Go to the ext-mongodb source
-    cd /usr/src/phpvm/ext-mongodb
-    git submodule update --init --recursive --force
-    git pull
+    cd /usr/src/phpvm/ext-mongodb || exit 1
+    git submodule update --init --recursive --force || exit 1
+    git pull || exit 1
 
     # Compile & install ext-mongodb
     printf "\n" | phpize || exit 1
@@ -243,17 +242,17 @@ case "$cmd" in
 
     # Download/update mongodb repo
     [ -d "/usr/src/phpvm/ext-psr" ] && {
-      cd /usr/src/phpvm/ext-psr
+      cd /usr/src/phpvm/ext-psr || exit 1
       git fetch --all --tags || exit 1
     } || {
       git clone https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr || exit 1
-      cd /usr/src/phpvm/ext-psr
+      cd /usr/src/phpvm/ext-psr || exit 1
       git fetch --all --tags || exit 1
     }
 
     # Go to the ext-psr source
-    cd /usr/src/phpvm/ext-psr
-    git pull
+    cd /usr/src/phpvm/ext-psr || exit 1
+    git pull || exit 1
 
     # Compile & install ext-pr
     printf "\n" | phpize || exit 1
@@ -264,23 +263,22 @@ case "$cmd" in
 
     # Download/update phalcon repo
     [ -d "/usr/src/phpvm/ext-phalcon" ] && {
-      cd /usr/src/phpvm/ext-phalcon
+      cd /usr/src/phpvm/ext-phalcon || exit 1
       git fetch --all --tags || exit 1
     } || {
       git clone https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon || exit 1
-      cd /usr/src/phpvm/ext-phalcon
+      cd /usr/src/phpvm/ext-phalcon || exit 1
       git fetch --all --tags || exit 1
     }
 
     # Build and install phalcon
     cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-    git checkout $(version phalcon/cphalcon)
-    git pull
-    phpize
-    ./configure --enable-phalcon
-    make clean
-    make ${MAKEOPTS}
-    make install
+    git checkout $(version phalcon/cphalcon) || exit 1
+    phpize || exit 1
+    ./configure --enable-phalcon || exit 1
+    make clean || exit 1
+    make ${MAKEOPTS} || exit 1
+    make install || exit 1
     echo "extension=phalcon.so" >> /usr/local/lib/php.ini
 
    ;;
