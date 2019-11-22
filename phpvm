@@ -199,8 +199,12 @@ case "$cmd" in
     }
 
     # Go to the ext-memcache source
-    cd /usr/src/phpvm/ext-memcached || exit 1
-    git checkout "NON_BLOCKING_IO_php${major}" || exit 1
+    cd /usr/src/phpvm/ext-memcache || exit 1
+    if [ $major -lt 7 ]; then
+      git checkout -b "NON_BLOCKING_IO" "origin/NON_BLOCKING_IO" || exit 1
+    else
+      git checkout -b "NON_BLOCKING_IO_php${major}" "origin/NON_BLOCKING_IO_php${major}" || exit 1
+    fi
     git pull || exit 1
 
     # Compile & install ext-memcache
