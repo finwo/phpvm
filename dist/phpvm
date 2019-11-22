@@ -8,6 +8,13 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 VERSION=0.0.1
+detect_distro() {
+  if [ -f /etc/apk/repositories ]; then
+    echo "alpine"
+  else
+    echo "unknown"
+  fi
+}
 ncpu() {
   if command -v nproc &>/dev/null; then
     nproc
@@ -93,14 +100,6 @@ for SUPPORT in ${SUPPORTS[@]}; do
   CONFOPTS="${CONFOPTS} --with-${SUPPORT}"
 done
 
-detect_distro() {
-  if [ -f /etc/apk/repositories ]; then
-    echo "alpine"
-  else
-    echo "unknown"
-  fi
-}
-
 # Run command
 case "$cmd" in
   list)
@@ -109,7 +108,7 @@ case "$cmd" in
   use)
 
     if [ $install_deps -gt 0 ]; then
-      case "$(detect_distro)" in
+      case "$(distro)" in
         alpine)
           apk add \
             autoconf \
