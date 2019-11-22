@@ -148,6 +148,11 @@ case "$cmd" in
     git pull
 
     # Compile & install ext-memcached
+    if [ "${major}" -eq 5 ]; then
+      git checkout REL2_0
+    else
+      git checkout "php${major}"
+    fi
     printf "\n" | phpize || exit 1
     printf "\n" | ./configure --disable-memcached-sasl || exit 1
     make $MAKEOPTS || exit 1
