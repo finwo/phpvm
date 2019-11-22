@@ -110,17 +110,6 @@ case "$cmd" in
     ;;
   use)
 
-    rm -rf /usr/local/bin/pear*
-    rm -rf /usr/local/bin/pecl*
-    rm -rf /usr/local/bin/phar*
-    rm -rf /usr/local/bin/php*
-    rm -rf /usr/local/etc/pear*
-    rm -rf /usr/local/etc/php*
-    rm -rf /usr/local/include/php*
-    rm -rf /usr/local/lib/php*
-    rm -rf /usr/local/php*
-    rm -rf /usr/local/sbin/php*
-
     if [ $install_deps -gt 0 ]; then
       case "$(detect_distro)" in
         alpine)
@@ -151,23 +140,6 @@ case "$cmd" in
       }
     }
 
-    # Build if not done yet
-    [ -d "/usr/src/phpvm/php-${target}" ] || {
-      tar xzf "${tarball}" -C "/usr/src/phpvm"
-      cd "/usr/src/phpvm/php-${target}"
-
-      ./configure ${CONFOPTS} \
-        && make ${MAKEOPTS} || {
-        cd /usr/src/phpvm
-        rm -rf "/usr/src/phpvm/php-${target}"
-        exit 1
-      }
-    }
-
-    # Install chosen version
-    cd "/usr/src/phpvm/php-${target}"
-    make install
-
     # Download/update memcached repo
     [ -d "/usr/src/phpvm/ext-memcached" ] && {
       cd /usr/src/phpvm/ext-memcached
@@ -177,24 +149,15 @@ case "$cmd" in
       cd /usr/src/phpvm/ext-memcached
       git fetch --all --tags
     }
-
-    # Go to the ext-memcached source
-    cd /usr/src/phpvm/ext-memcached
-    git pull
-
-    # Compile & install ext-memcached
     if [ "${major}" -lt 7 ]; then
       git checkout REL2_0
       git branch --set-upstream-to=origin/REL2_0
+      git pull
     else
       git checkout master
       git branch --set-upstream-to=master
+      git pull
     fi
-    printf "\n" | phpize
-    printf "\n" | ./configure --disable-memcached-sasl
-    make $MAKEOPTS
-    make install
-    echo "extension=memcached.so" >> /usr/local/lib/php.ini
 
     # Download/update memcache repo
     [ -d "/usr/src/phpvm/ext-memcache" ] && {
@@ -205,24 +168,15 @@ case "$cmd" in
       cd /usr/src/phpvm/ext-memcache
       git fetch --all
     }
-
-    # Go to the ext-memcache source
-    cd /usr/src/phpvm/ext-memcache
     if [ $major -lt 7 ]; then
       git checkout NON_BLOCKING_IO
       git branch --set-upstream-to=origin/NON_BLOCKING_IO
+      git pull
     else
       git checkout "NON_BLOCKING_IO_php${major}"
       git branch "--set-upstream-to=origin/NON_BLOCKING_IO_php${major}"
+      git pull
     fi
-    git pull
-
-    # Compile & install ext-memcache
-    printf "\n" | phpize
-    printf "\n" | ./configure --enable-memcache
-    make $MAKEOPTS
-    make install
-    echo "extension=memcache.so" >> /usr/local/lib/php.ini
 
     # Download/update mongodb repo
     [ -d "/usr/src/phpvm/ext-mongodb" ] && {
@@ -233,59 +187,32 @@ case "$cmd" in
       cd /usr/src/phpvm/ext-mongodb
       git fetch --all --tags
     }
-
-    # Go to the ext-mongodb source
-    cd /usr/src/phpvm/ext-mongodb
     git submodule update --init --recursive --force
     git pull
 
-    # Compile & install ext-mongodb
-    printf "\n" | phpize
-    printf "\n" | ./configure
-    make $MAKEOPTS
-    make install
-    echo "extension=mongodb.so" >> /usr/local/lib/php.ini
-
-    # Download/update mongodb repo
+    # Download/update psr repo
     [ -d "/usr/src/phpvm/ext-psr" ] && {
       cd /usr/src/phpvm/ext-psr
       git fetch --all --tags
+      git pull
     } || {
       git clone https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr
       cd /usr/src/phpvm/ext-psr
       git fetch --all --tags
+      git pull
     }
-
-    # Go to the ext-psr source
-    cd /usr/src/phpvm/ext-psr
-    git pull
-
-    # Compile & install ext-pr
-    printf "\n" | phpize
-    printf "\n" | ./configure
-    make $MAKEOPTS
-    make install
-    echo "extension=psr.so" >> /usr/local/lib/php.ini
 
     # Download/update phalcon repo
     [ -d "/usr/src/phpvm/ext-phalcon" ] && {
-      cd /usr/src/phpvm/ext-phalcon
+      cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
       git fetch --all --tags
+      git checkout $(version phalcon/cphalcon)
     } || {
       git clone https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon
-      cd /usr/src/phpvm/ext-phalcon
+      cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
       git fetch --all --tags
+      git checkout $(version phalcon/cphalcon)
     }
-
-    # Build and install phalcon
-    cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-    git checkout $(version phalcon/cphalcon)
-    phpize
-    ./configure --enable-phalcon
-    make clean
-    make ${MAKEOPTS}
-    make install
-    echo "extension=phalcon.so" >> /usr/local/lib/php.ini
 
     # Download/update gearman repo
     [ -d "/usr/src/phpvm/ext-gearman" ] && {
@@ -320,6 +247,76 @@ case "$cmd" in
       make ${MAKEOPTS}
       make install
     }
+
+    # Remove old php version
+    rm -rf /usr/local/bin/pear*
+    rm -rf /usr/local/bin/pecl*
+    rm -rf /usr/local/bin/phar*
+    rm -rf /usr/local/bin/php*
+    rm -rf /usr/local/etc/pear*
+    rm -rf /usr/local/etc/php*
+    rm -rf /usr/local/include/php*
+    rm -rf /usr/local/lib/php*
+    rm -rf /usr/local/php*
+    rm -rf /usr/local/sbin/php*
+
+    # Build php itself if not done yet
+    [ -d "/usr/src/phpvm/php-${target}" ] || {
+      tar xzf "${tarball}" -C "/usr/src/phpvm"
+      cd "/usr/src/phpvm/php-${target}"
+
+      ./configure ${CONFOPTS} \
+        && make ${MAKEOPTS} || {
+        cd /usr/src/phpvm
+        rm -rf "/usr/src/phpvm/php-${target}"
+        exit 1
+      }
+    }
+
+    # Install chosen version
+    cd "/usr/src/phpvm/php-${target}"
+    make install
+
+    # Go to the ext-memcached source
+    cd /usr/src/phpvm/ext-memcached
+    printf "\n" | phpize
+    printf "\n" | ./configure --disable-memcached-sasl
+    make $MAKEOPTS
+    make install
+    echo "extension=memcached.so" >> /usr/local/lib/php.ini
+
+    # Compile & install ext-memcache
+    cd /usr/src/phpvm/ext-memcache
+    printf "\n" | phpize
+    printf "\n" | ./configure --enable-memcache
+    make $MAKEOPTS
+    make install
+    echo "extension=memcache.so" >> /usr/local/lib/php.ini
+
+    # Compile & install ext-mongodb
+    cd /usr/src/phpvm/ext-mongodb
+    printf "\n" | phpize
+    printf "\n" | ./configure
+    make $MAKEOPTS
+    make install
+    echo "extension=mongodb.so" >> /usr/local/lib/php.ini
+
+    # Compile & install ext-pr
+    cd /usr/src/phpvm/ext-psr
+    printf "\n" | phpize
+    printf "\n" | ./configure
+    make $MAKEOPTS
+    make install
+    echo "extension=psr.so" >> /usr/local/lib/php.ini
+
+    # Compile & install ext-phalcon
+    cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
+    phpize
+    ./configure --enable-phalcon
+    make clean
+    make ${MAKEOPTS}
+    make install
+    echo "extension=phalcon.so" >> /usr/local/lib/php.ini
 
     # Build and install gearman
     cd /usr/src/phpvm/ext-gearman
