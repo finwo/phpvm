@@ -179,8 +179,10 @@ case "$cmd" in
     # Compile & install ext-memcached
     if [ "${major}" -eq 5 ]; then
       git checkout REL2_0
+      git branch --set-upstream-to=origin/REL2_0
     else
       git checkout "php${major}"
+      git branch "--set-upstream-to=origin/php${major}"
     fi
     printf "\n" | phpize || exit 1
     printf "\n" | ./configure --disable-memcached-sasl || exit 1
@@ -202,8 +204,10 @@ case "$cmd" in
     cd /usr/src/phpvm/ext-memcache || exit 1
     if [ $major -lt 7 ]; then
       git checkout NON_BLOCKING_IO || exit 1
+      git branch --set-upstream-to=origin/NON_BLOCKING_IO
     else
       git checkout "NON_BLOCKING_IO_php${major}" || exit 1
+      git branch "--set-upstream-to=origin/NON_BLOCKING_IO_php${major}"
     fi
     git pull || exit 1
 
