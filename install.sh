@@ -17,5 +17,5 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-curl -sL https://finwo.github.io/phpvm/phpvm > "${PREFIX}/bin/phpvm"
+curl -sL https://finwo.github.io/phpvm/dist/phpvm > "${PREFIX}/bin/phpvm"
 chmod +x "${PREFIX}/bin/phpvm"

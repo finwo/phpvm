@@ -3,12 +3,11 @@
 # Hard-crash everything
 set -e
 
-# Ensure we're running as root
 if [[ $EUID -ne 0 ]]; then
   echo "This script must be run as root"
   exit 1
 fi
-
+VERSION=0.0.1
 ncpu() {
   if command -v nproc &>/dev/null; then
     nproc
@@ -16,7 +15,6 @@ ncpu() {
     echo 1
   fi
 }
-
 # https://gist.github.com/lukechilds/a83e1d7127b78fef38c2914c4ececc3c
 version() {
     curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
