@@ -159,13 +159,14 @@ case "$cmd" in
     [ -d "/usr/src/phpvm/ext-mongodb" ] && {
       cd /usr/src/phpvm/ext-mongodb
       git fetch --all --tags
+      git pull
+      git submodule update --init --recursive --force
     } || {
       git clone https://github.com/mongodb/mongo-php-driver /usr/src/phpvm/ext-mongodb
       cd /usr/src/phpvm/ext-mongodb
       git fetch --all --tags
+      git submodule update --init --recursive --force
     }
-    git submodule update --init --recursive --force
-    git pull
 
     # Download/update psr repo
     [ -d "/usr/src/phpvm/ext-psr" ] && {
@@ -176,7 +177,6 @@ case "$cmd" in
       git clone https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr
       cd /usr/src/phpvm/ext-psr
       git fetch --all --tags
-      git pull
     }
 
     # Download/update phalcon repo
@@ -184,6 +184,7 @@ case "$cmd" in
       cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
       git fetch --all --tags
       git checkout $(version phalcon/cphalcon)
+      git pull
     } || {
       git clone https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon
       cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
@@ -195,6 +196,7 @@ case "$cmd" in
     [ -d "/usr/src/phpvm/ext-gearman" ] && {
       cd /usr/src/phpvm/ext-gearman
       git fetch --all --tags
+      git pull
     } || {
       git clone https://github.com/wcgallego/pecl-gearman /usr/src/phpvm/ext-gearman
       cd /usr/src/phpvm/ext-gearman
