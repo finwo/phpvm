@@ -142,7 +142,7 @@ case "$cmd" in
       cd /usr/src/phpvm/ext-memcached
       git fetch --all --tags
     } || {
-      git clone https://github.com/php-memcached-dev/php-memcached /usr/src/phpvm/ext-memcached
+      git clone --depth 1 https://github.com/php-memcached-dev/php-memcached /usr/src/phpvm/ext-memcached
       cd /usr/src/phpvm/ext-memcached
       git fetch --all --tags
     }
@@ -161,7 +161,7 @@ case "$cmd" in
       cd /usr/src/phpvm/ext-memcache
       git fetch --all
     } || {
-      git clone https://github.com/websupport-sk/pecl-memcache /usr/src/phpvm/ext-memcache
+      git clone --depth 1 https://github.com/websupport-sk/pecl-memcache /usr/src/phpvm/ext-memcache
       cd /usr/src/phpvm/ext-memcache
       git fetch --all
     }
@@ -182,7 +182,7 @@ case "$cmd" in
       git pull
       git submodule update --init --recursive --force
     } || {
-      git clone https://github.com/mongodb/mongo-php-driver /usr/src/phpvm/ext-mongodb
+      git clone --depth 1 https://github.com/mongodb/mongo-php-driver /usr/src/phpvm/ext-mongodb
       cd /usr/src/phpvm/ext-mongodb
       git fetch --all --tags
       git submodule update --init --recursive --force
@@ -194,7 +194,7 @@ case "$cmd" in
       git fetch --all --tags
       git pull
     } || {
-      git clone https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr
+      git clone --depth 1 https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr
       cd /usr/src/phpvm/ext-psr
       git fetch --all --tags
     }
@@ -206,7 +206,7 @@ case "$cmd" in
       git checkout $(version phalcon/cphalcon)
       git pull
     } || {
-      git clone https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon
+      git clone --depth 1 https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon
       cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
       git fetch --all --tags
       git checkout $(version phalcon/cphalcon)
@@ -218,7 +218,7 @@ case "$cmd" in
       git fetch --all --tags
       git pull
     } || {
-      git clone https://github.com/wcgallego/pecl-gearman /usr/src/phpvm/ext-gearman
+      git clone --depth 1 https://github.com/wcgallego/pecl-gearman /usr/src/phpvm/ext-gearman
       cd /usr/src/phpvm/ext-gearman
       git fetch --all --tags
     }
