@@ -1,4 +1,4 @@
-detect_distro() {
+distro() {
   if [ -f /etc/apk/repositories ]; then
     echo "alpine"
   else

@@ -8,7 +8,7 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 VERSION=0.0.1
-detect_distro() {
+distro() {
   if [ -f /etc/apk/repositories ]; then
     echo "alpine"
   else
