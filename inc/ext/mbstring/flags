@@ -1,0 +1,3 @@
+if contains "${EXTS[@]}" "mbstring"; then
+  CONFOPTS="${CONFOPTS} --enable-mbstring"
+fi

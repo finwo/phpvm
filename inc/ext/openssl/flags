@@ -1,0 +1,3 @@
+if contains "${EXTS[@]}" "openssl"; then
+  CONFOPTS="${CONFOPTS} --with-openssl"
+fi

@@ -1,0 +1,16 @@
+if [ $install_deps -gt 0 ]; then
+  case "$(distro)" in
+    alpine)
+      apk add gnu-libiconv-dev
+      ;;
+    osx)
+      mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/iconv"
+      curl -L https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz | \
+        untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/iconv" --strip-components=1
+      cd "${PREFIX}/src/phpvm/php-${target}/libs/iconv"
+      ./configure
+      make ${MAKEOPTS}
+      make install ${MAKEOPTS}
+      ;;
+  esac
+fi

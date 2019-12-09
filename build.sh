@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -e
+# Hard-crash everything
+set -ex
 
 # Download preprocessor
 [ -f "bashpp" ] || {
@@ -8,5 +9,5 @@ set -e
   chmod +x bashpp
 }
 
-./bashpp -I inc -o dist/phpvm src/phpvm
+./bashpp -I inc -o dist/phpvm src/phpvm 
 chmod +x dist/phpvm

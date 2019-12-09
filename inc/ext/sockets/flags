@@ -1,0 +1,3 @@
+if contains "${EXTS[@]}" "sockets"; then
+  CONFOPTS="${CONFOPTS} --enable-sockets"
+fi

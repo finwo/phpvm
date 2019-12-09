@@ -1,0 +1,3 @@
+if contains "${EXTS[@]}" "mysqli"; then
+  CONFOPTS="${CONFOPTS} --with-mysqli"
+fi

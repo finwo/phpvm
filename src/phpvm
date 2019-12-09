@@ -1,62 +1,75 @@
 #!/usr/bin/env bash
 
 # Hard-crash everything
-set -e
+set -ex
 
-#include <config/suid>
 #include <config/version>
 #include <fn/distro>
 #include <fn/ncpu>
 #include <fn/version>
+#include <fn/untar>
+#include <fn/contains>
 
 export CFLAGS=
 export CONFOPTS=
 export MAKEOPTS="-j$(($(ncpu)+1))"
+
+if [ -z "${PREFIX+x}" ]; then
+  export PREFIX=/usr/local
+fi
+
+if [ -z "${CC+x}" ]; then
+  export CC=$(which gcc-9 gcc | head -n 1)
+fi
 
 # Gentoo stuff
 if [ -f /etc/portage/make.conf ]; then
   source /etc/portage/make.conf
 fi
 
+# Configs
 if [ -f /etc/phpvmrc ]; then
   source /etc/phpvmrc
 fi
+if [ -f ~/.phpvmrc ]; then
+  source ~/.phpvmrc
+fi
 
-# Build-in extensions
-BUILDINS=()
-BUILDINS+=("fpm" "calendar" "dba" "exif" "mbstring" "ftp" "pcntl" "soap")
-BUILDINS+=("sockets" "sysvmsg" "sysvsem" "sysvshm" "wddx" "zip" "bcmath")
-
-# Supports
-SUPPORTS=()
-SUPPORTS+=("gnu-ld" "mysqli" "pdo-mysql" "curl" "mhash" "pdo-pgsql" "pgsql")
-SUPPORTS+=("openssl" "zlib")
-
-# Ensure required dirs exist
-mkdir -p /usr/src/phpvm
-mkdir -p /var/cache/phpvm
+# Extensions
+#include <ext/all/list>
+EXTS=()
 
 # Track some variables
 cmd=list
-target="7.2.7"
+target="7.0.33"
 install_deps=0
 
 # Parse args
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
-    list|version|help)
+    list|version|help|extensions)
       cmd="$1"
       ;;
     use)
       shift
       target="$1"
       cmd="use"
+#include <config/suid>
       ;;
     --help)
       cmd="help"
       ;;
-    --install-dependencies)
+    --install-dependencies|-I)
       install_deps=1
+      ;;
+    --full)
+      for EXT in ${ALLEXTS[@]}; do
+        EXTS+=("$EXT")
+      done
+      ;;
+    --ext|-e)
+      shift
+      EXTS+=("$1")
       ;;
   esac
   shift
@@ -67,18 +80,15 @@ minor=$(echo "${target}" | tr '.' ' ' | awk '{print $2}')
 major=$(echo "${target}" | tr '.' ' ' | awk '{print $1}')
 
 if [ $major -eq 7 ] && [ $minor -ge 1 ]; then
-  BUILDINS+=("intl")
+  CONFOPTS="${CONFOPTS} --enable-intl"
 elif [ $major -gt 7 ]; then
-  BUILDINS+=("intl")
+  CONFOPTS="${CONFOPTS} --enable-intl"
 fi
 
-# Build configure options
-for BUILDIN in ${BUILDINS[@]}; do
-  CONFOPTS="${CONFOPTS} --enable-${BUILDIN}"
-done
-for SUPPORT in ${SUPPORTS[@]}; do
-  CONFOPTS="${CONFOPTS} --with-${SUPPORT}"
-done
+# # Build configure options
+# for SUPPORT in ${SUPPORTS[@]}; do
+#   CONFOPTS="${CONFOPTS} --with-${SUPPORT}"
+# done
 
 # Run command
 case "$cmd" in
@@ -98,215 +108,224 @@ case "$cmd" in
             git \
             grep \
             icu-dev \
-            libmemcached-dev \
             libxml2-dev \
-            libzip-dev \
             mlocate \
-            openssl-dev \
             postgresql-dev \
             ;
           ;;
       esac
     fi
 
-    # Download tarball if missing
-    tarball="/var/cache/phpvm/php-${target}.tar.gz"
-    [ -f "${tarball}" ] || {
-      curl -L "http://php.net/get/php-${target}.tar.gz/from/this/mirror" > "${tarball}" || {
-        rm -rf "${tarball}"
-        break
-      }
-    }
+    # Ensure required dirs exist
+    mkdir -p "${PREFIX}/src/phpvm"
+    # mkdir -p /var/cache/phpvm
 
-    # Download/update memcached repo
-    [ -d "/usr/src/phpvm/ext-memcached" ] && {
-      cd /usr/src/phpvm/ext-memcached
-      git fetch --all --tags
-    } || {
-      git clone --depth 1 https://github.com/php-memcached-dev/php-memcached /usr/src/phpvm/ext-memcached
-      cd /usr/src/phpvm/ext-memcached
-      git fetch --all --tags
-    }
-    if [ "${major}" -lt 7 ]; then
-      git checkout REL2_0
-      git branch --set-upstream-to=origin/REL2_0
-      git pull
-    else
-      git checkout master
-      git branch --set-upstream-to=master
-      git pull
-    fi
 
-    # Download/update memcache repo
-    [ -d "/usr/src/phpvm/ext-memcache" ] && {
-      cd /usr/src/phpvm/ext-memcache
-      git fetch --all
-    } || {
-      git clone --depth 1 https://github.com/websupport-sk/pecl-memcache /usr/src/phpvm/ext-memcache
-      cd /usr/src/phpvm/ext-memcache
-      git fetch --all
-    }
-    if [ $major -lt 7 ]; then
-      git checkout NON_BLOCKING_IO
-      git branch --set-upstream-to=origin/NON_BLOCKING_IO
-      git pull
-    else
-      git checkout "NON_BLOCKING_IO_php${major}"
-      git branch "--set-upstream-to=origin/NON_BLOCKING_IO_php${major}"
-      git pull
-    fi
+    # # Download/update memcached repo
+    # [ -d "/usr/src/phpvm/ext-memcached" ] && {
+    #   cd /usr/src/phpvm/ext-memcached
+    #   git fetch --all --tags
+    # } || {
+    #   git clone --depth 1 https://github.com/php-memcached-dev/php-memcached /usr/src/phpvm/ext-memcached
+    #   cd /usr/src/phpvm/ext-memcached
+    #   git fetch --all --tags
+    # }
+    # if [ "${major}" -lt 7 ]; then
+    #   git checkout REL2_0
+    #   git branch --set-upstream-to=origin/REL2_0
+    #   git pull
+    # else
+    #   git checkout master
+    #   git branch --set-upstream-to=master
+    #   git pull
+    # fi
 
-    # Download/update mongodb repo
-    [ -d "/usr/src/phpvm/ext-mongodb" ] && {
-      cd /usr/src/phpvm/ext-mongodb
-      git fetch --all --tags
-      git pull
-      git submodule update --init --recursive --force
-    } || {
-      git clone --depth 1 https://github.com/mongodb/mongo-php-driver /usr/src/phpvm/ext-mongodb
-      cd /usr/src/phpvm/ext-mongodb
-      git fetch --all --tags
-      git submodule update --init --recursive --force
-    }
+    # # Download/update memcache repo
+    # [ -d "/usr/src/phpvm/ext-memcache" ] && {
+    #   cd /usr/src/phpvm/ext-memcache
+    #   git fetch --all
+    # } || {
+    #   git clone --depth 1 https://github.com/websupport-sk/pecl-memcache /usr/src/phpvm/ext-memcache
+    #   cd /usr/src/phpvm/ext-memcache
+    #   git fetch --all
+    # }
+    # if [ $major -lt 7 ]; then
+    #   git checkout NON_BLOCKING_IO
+    #   git branch --set-upstream-to=origin/NON_BLOCKING_IO
+    #   git pull
+    # else
+    #   git checkout "NON_BLOCKING_IO_php${major}"
+    #   git branch "--set-upstream-to=origin/NON_BLOCKING_IO_php${major}"
+    #   git pull
+    # fi
 
-    # Download/update psr repo
-    [ -d "/usr/src/phpvm/ext-psr" ] && {
-      cd /usr/src/phpvm/ext-psr
-      git fetch --all --tags
-      git pull
-    } || {
-      git clone --depth 1 https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr
-      cd /usr/src/phpvm/ext-psr
-      git fetch --all --tags
-    }
+    # # Download/update mongodb repo
+    # [ -d "/usr/src/phpvm/ext-mongodb" ] && {
+    #   cd /usr/src/phpvm/ext-mongodb
+    #   git fetch --all --tags
+    #   git pull
+    #   git submodule update --init --recursive --force
+    # } || {
+    #   git clone --depth 1 https://github.com/mongodb/mongo-php-driver /usr/src/phpvm/ext-mongodb
+    #   cd /usr/src/phpvm/ext-mongodb
+    #   git fetch --all --tags
+    #   git submodule update --init --recursive --force
+    # }
 
-    # Download/update phalcon repo
-    [ -d "/usr/src/phpvm/ext-phalcon" ] && {
-      cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-      git fetch --all --tags
-      git checkout $(version phalcon/cphalcon)
-      git pull
-    } || {
-      git clone --depth 1 https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon
-      cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-      git fetch --all --tags
-      git checkout $(version phalcon/cphalcon)
-    }
+    # # Download/update psr repo
+    # [ -d "/usr/src/phpvm/ext-psr" ] && {
+    #   cd /usr/src/phpvm/ext-psr
+    #   git fetch --all --tags
+    #   git pull
+    # } || {
+    #   git clone --depth 1 https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr
+    #   cd /usr/src/phpvm/ext-psr
+    #   git fetch --all --tags
+    # }
 
-    # Download/update gearman repo
-    [ -d "/usr/src/phpvm/ext-gearman" ] && {
-      cd /usr/src/phpvm/ext-gearman
-      git fetch --all --tags
-      git pull
-    } || {
-      git clone --depth 1 https://github.com/wcgallego/pecl-gearman /usr/src/phpvm/ext-gearman
-      cd /usr/src/phpvm/ext-gearman
-      git fetch --all --tags
-    }
+    # # Download/update phalcon repo
+    # [ -d "/usr/src/phpvm/ext-phalcon" ] && {
+    #   cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
+    #   git fetch --all --tags
+    #   git checkout $(version phalcon/cphalcon)
+    #   git pull
+    # } || {
+    #   git clone --depth 1 https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon
+    #   cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
+    #   git fetch --all --tags
+    #   git checkout $(version phalcon/cphalcon)
+    # }
 
-    # Ensure libgearman
-    updatedb
-    locate gearman.h | grep -E '^(\/usr(\/local)?)?\/include' || {
+    # # Download/update gearman repo
+    # [ -d "/usr/src/phpvm/ext-gearman" ] && {
+    #   cd /usr/src/phpvm/ext-gearman
+    #   git fetch --all --tags
+    #   git pull
+    # } || {
+    #   git clone --depth 1 https://github.com/wcgallego/pecl-gearman /usr/src/phpvm/ext-gearman
+    #   cd /usr/src/phpvm/ext-gearman
+    #   git fetch --all --tags
+    # }
 
-      # Download tarball if missing
-      gmversion=$(version gearman/gearmand)
-      tarball="/var/cache/phpvm/lib-gearman-${gmversion}.tar.gz"
-      [ -f "${tarball}" ] || {
-        curl -L "https://github.com/gearman/gearmand/releases/download/${gmversion}/gearmand-${gmversion}.tar.gz" > "${tarball}" || {
-          rm -rf "${tarball}"
-          break
-        }
-      }
+    # # Ensure libgearman
+    # updatedb
+    # locate gearman.h | grep -E '^(\/usr(\/local)?)?\/include' || {
 
-      # unpack libgearman
-      mkdir -p /usr/src/phpvm/lib-gearman
-      tar xzf "${tarball}" --overwrite --strip-components=1 -C "/usr/src/phpvm/lib-gearman"
+    #   # Download tarball if missing
+    #   gmversion=$(version gearman/gearmand)
+    #   tarball="/var/cache/phpvm/lib-gearman-${gmversion}.tar.gz"
+    #   [ -f "${tarball}" ] || {
+    #     curl -L "https://github.com/gearman/gearmand/releases/download/${gmversion}/gearmand-${gmversion}.tar.gz" > "${tarball}" || {
+    #       rm -rf "${tarball}"
+    #       break
+    #     }
+    #   }
 
-      cd /usr/src/phpvm/lib-gearman
-      ./configure
-      make ${MAKEOPTS}
-      make install
-    }
+    #   # unpack libgearman
+    #   mkdir -p /usr/src/phpvm/lib-gearman
+    #   untar "${tarball}" --overwrite --strip-components=1 -C "/usr/src/phpvm/lib-gearman"
+
+    #   cd /usr/src/phpvm/lib-gearman
+    #   ./configure
+    #   make ${MAKEOPTS}
+    #   make install
+    # }
 
     # Remove old php version
-    rm -rf /usr/local/bin/pear*
-    rm -rf /usr/local/bin/pecl*
-    rm -rf /usr/local/bin/phar*
-    rm -rf /usr/local/bin/php*
-    rm -rf /usr/local/etc/pear*
-    rm -rf /usr/local/etc/php*
-    rm -rf /usr/local/include/php*
-    rm -rf /usr/local/lib/php*
-    rm -rf /usr/local/php*
-    rm -rf /usr/local/sbin/php*
+    rm -rf "${PREFIX}/bin/pear*"
+    rm -rf "${PREFIX}/bin/pecl*"
+    rm -rf "${PREFIX}/bin/phar*"
+    rm -rf "${PREFIX}/bin/php*"
+    rm -rf "${PREFIX}/etc/pear*"
+    rm -rf "${PREFIX}/etc/php*"
+    rm -rf "${PREFIX}/include/php*"
+    rm -rf "${PREFIX}/lib/php*"
+    rm -rf "${PREFIX}/php*"
+    rm -rf "${PREFIX}/sbin/php*"
 
-    # Build php itself if not done yet
-    [ -d "/usr/src/phpvm/php-${target}" ] || {
-      tar xzf "${tarball}" -C "/usr/src/phpvm"
-      cd "/usr/src/phpvm/php-${target}"
-
-      ./configure ${CONFOPTS} \
-        && make ${MAKEOPTS} || {
-        cd /usr/src/phpvm
-        rm -rf "/usr/src/phpvm/php-${target}"
-        exit 1
-      }
+    # Download and unpack php
+    [ -f "${PREFIX}/src/phpvm/php-${target}/configure" ] || {
+      mkdir -p "${PREFIX}/src/phpvm/php-${target}"
+      curl -L "http://php.net/get/php-${target}.tar.gz/from/this/mirror" | \
+        untar - -C "${PREFIX}/src/phpvm"
     }
 
-    # Install chosen version
-    cd "/usr/src/phpvm/php-${target}"
-    make install
+    # Build conf opts
+#include <ext/all/flags>
 
-    # Go to the ext-memcached source
-    cd /usr/src/phpvm/ext-memcached
-    printf "\n" | phpize
-    printf "\n" | ./configure --disable-memcached-sasl
-    make $MAKEOPTS
-    make install
-    echo "extension=memcached.so" >> /usr/local/lib/php.ini
+    # Install dependencies
+#include <ext/all/deps>
 
-    # Compile & install ext-memcache
-    cd /usr/src/phpvm/ext-memcache
-    printf "\n" | phpize
-    printf "\n" | ./configure --enable-memcache
-    make $MAKEOPTS
-    make install
-    echo "extension=memcache.so" >> /usr/local/lib/php.ini
+    # Configure and build php
+    cd "${PREFIX}/src/phpvm/php-${target}"
+    ./configure ${CONFOPTS} \
+      && make ${MAKEOPTS}
 
-    # Compile & install ext-mongodb
-    cd /usr/src/phpvm/ext-mongodb
-    printf "\n" | phpize
-    printf "\n" | ./configure
-    make $MAKEOPTS
-    make install
-    echo "extension=mongodb.so" >> /usr/local/lib/php.ini
+    echo "PIZZA"
 
-    # Compile & install ext-pr
-    cd /usr/src/phpvm/ext-psr
-    printf "\n" | phpize
-    printf "\n" | ./configure
-    make $MAKEOPTS
-    make install
-    echo "extension=psr.so" >> /usr/local/lib/php.ini
+    # # Download tarball if missing
+    # tarball="/var/cache/phpvm/php-${target}.tar.gz"
+    # [ -f "${tarball}" ] || {
+    #   curl -L "http://php.net/get/php-${target}.tar.gz/from/this/mirror" > "${tarball}" || {
+    #     rm -rf "${tarball}"
+    #     break
+    #   }
+    # }
 
-    # Compile & install ext-phalcon
-    cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-    phpize
-    ./configure --enable-phalcon
-    make clean
-    make ${MAKEOPTS}
-    make install
-    echo "extension=phalcon.so" >> /usr/local/lib/php.ini
+    # # Install chosen version
+    # cd "/usr/src/phpvm/php-${target}"
+    # make install
 
-    # Build and install gearman
-    cd /usr/src/phpvm/ext-gearman
-    git pull
-    phpize
-    ./configure
-    make clean
-    make ${MAKEOPTS}
-    make install
-    echo "extension=gearman.so" >> /usr/local/lib/php.ini
+    # # Go to the ext-memcached source
+    # cd /usr/src/phpvm/ext-memcached
+    # printf "\n" | phpize
+    # printf "\n" | ./configure --disable-memcached-sasl
+    # make $MAKEOPTS
+    # make install
+    # echo "extension=memcached.so" >> /usr/local/lib/php.ini
+
+    # # Compile & install ext-memcache
+    # cd /usr/src/phpvm/ext-memcache
+    # printf "\n" | phpize
+    # printf "\n" | ./configure --enable-memcache
+    # make $MAKEOPTS
+    # make install
+    # echo "extension=memcache.so" >> /usr/local/lib/php.ini
+
+    # # Compile & install ext-mongodb
+    # cd /usr/src/phpvm/ext-mongodb
+    # printf "\n" | phpize
+    # printf "\n" | ./configure
+    # make $MAKEOPTS
+    # make install
+    # echo "extension=mongodb.so" >> /usr/local/lib/php.ini
+
+    # # Compile & install ext-pr
+    # cd /usr/src/phpvm/ext-psr
+    # printf "\n" | phpize
+    # printf "\n" | ./configure
+    # make $MAKEOPTS
+    # make install
+    # echo "extension=psr.so" >> /usr/local/lib/php.ini
+
+    # # Compile & install ext-phalcon
+    # cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
+    # phpize
+    # ./configure --enable-phalcon
+    # make clean
+    # make ${MAKEOPTS}
+    # make install
+    # echo "extension=phalcon.so" >> /usr/local/lib/php.ini
+
+    # # Build and install gearman
+    # cd /usr/src/phpvm/ext-gearman
+    # git pull
+    # phpize
+    # ./configure
+    # make clean
+    # make ${MAKEOPTS}
+    # make install
+    # echo "extension=gearman.so" >> /usr/local/lib/php.ini
 
    ;;
   help)
@@ -318,10 +337,16 @@ case "$cmd" in
     echo "  ${name} help"
     echo ""
     echo "Commands:"
-    echo "  list     show the list of installed php versions"
-    echo "  version  show the version of the currently in-use php"
-    echo "  use      switch to a (different) php version"
-    echo "  help     show this usage"
+    echo "  extensions  show a list of available extensions"
+    echo "  list        show the list of installed php versions"
+    echo "  version     show the version of the currently in-use php"
+    echo "  use         switch to a (different) php version"
+    echo "  help        show this usage"
+    echo ""
+    echo "Options:"
+    echo "  --install-dependencies -I        Install system dependencies"
+    echo "  --ext                  -e  name  Include extension <name>"
+    echo "  --full                           Include all available extensions"
     ;;
 esac
 

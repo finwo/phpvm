@@ -1,0 +1,3 @@
+if contains "${EXTS[@]}" "gnu-ld"; then
+  CONFOPTS="${CONFOPTS} --with-gnu-ld"
+fi
