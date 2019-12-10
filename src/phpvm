@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
 # Hard-crash everything
-set -ex
+set -e
 
 #include <config/version>
 #include <fn/distro>
 #include <fn/ncpu>
 #include <fn/version>
 #include <fn/untar>
+#include <fn/ppatch>
 #include <fn/contains>
 
 export CFLAGS=
@@ -37,6 +38,7 @@ fi
 
 # Extensions
 #include <ext/all/list>
+PATCHES=()
 EXTS=()
 
 # Track some variables
@@ -54,7 +56,6 @@ while [[ "$#" -gt 0 ]]; do
       shift
       target="$1"
       cmd="use"
-#include <config/suid>
       ;;
     --help)
       cmd="help"
@@ -79,6 +80,9 @@ done
 minor=$(echo "${target}" | tr '.' ' ' | awk '{print $2}')
 major=$(echo "${target}" | tr '.' ' ' | awk '{print $1}')
 
+# Fetch patches to include
+#include <patches/all>
+
 if [ $major -eq 7 ] && [ $minor -ge 1 ]; then
   CONFOPTS="${CONFOPTS} --enable-intl"
 elif [ $major -gt 7 ]; then
@@ -100,7 +104,7 @@ case "$cmd" in
     if [ $install_deps -gt 0 ]; then
       case "$(distro)" in
         alpine)
-          apk add \
+          sudo apk add \
             autoconf \
             build-base \
             curl-dev \
@@ -117,9 +121,8 @@ case "$cmd" in
     fi
 
     # Ensure required dirs exist
-    mkdir -p "${PREFIX}/src/phpvm"
-    # mkdir -p /var/cache/phpvm
-
+    sudo mkdir -p "${PREFIX}/src/phpvm"
+    sudo chown -R $USER "${PREFIX}/src/phpvm"
 
     # # Download/update memcached repo
     # [ -d "/usr/src/phpvm/ext-memcached" ] && {
@@ -232,22 +235,26 @@ case "$cmd" in
     # }
 
     # Remove old php version
-    rm -rf "${PREFIX}/bin/pear*"
-    rm -rf "${PREFIX}/bin/pecl*"
-    rm -rf "${PREFIX}/bin/phar*"
-    rm -rf "${PREFIX}/bin/php*"
-    rm -rf "${PREFIX}/etc/pear*"
-    rm -rf "${PREFIX}/etc/php*"
-    rm -rf "${PREFIX}/include/php*"
-    rm -rf "${PREFIX}/lib/php*"
-    rm -rf "${PREFIX}/php*"
-    rm -rf "${PREFIX}/sbin/php*"
+    sudo rm -rf "${PREFIX}/bin/pear*"
+    sudo rm -rf "${PREFIX}/bin/pecl*"
+    sudo rm -rf "${PREFIX}/bin/phar*"
+    sudo rm -rf "${PREFIX}/bin/php*"
+    sudo rm -rf "${PREFIX}/etc/pear*"
+    sudo rm -rf "${PREFIX}/etc/php*"
+    sudo rm -rf "${PREFIX}/include/php*"
+    sudo rm -rf "${PREFIX}/lib/php*"
+    sudo rm -rf "${PREFIX}/php*"
+    sudo rm -rf "${PREFIX}/sbin/php*"
 
     # Download and unpack php
     [ -f "${PREFIX}/src/phpvm/php-${target}/configure" ] || {
       mkdir -p "${PREFIX}/src/phpvm/php-${target}"
       curl -L "http://php.net/get/php-${target}.tar.gz/from/this/mirror" | \
         untar - -C "${PREFIX}/src/phpvm"
+      cd "${PREFIX}/src/phpvm/php-${target}"
+      for patchContent in ${PATCHES[@]}; do
+        echo -e "$patchContent" | base64 --decode | ppatch -p1
+      done
     }
 
     # Build conf opts

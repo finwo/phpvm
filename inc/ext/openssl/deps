@@ -1,16 +1,20 @@
 if [ $install_deps -gt 0 ]; then
   case "$(distro)" in
     alpine)
-      apk add openssl-dev
+      sudo apk add openssl-dev
       ;;
     osx)
-      mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/openssl"
-      curl -L https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz | \
-        untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/openssl" --strip-components=1
-      cd "${PREFIX}/src/phpvm/php-${target}/libs/openssl"
-      ./config
-      make ${MAKEOPTS}
-      make install ${MAKEOPTS}
+      brew install openssl
+      # mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/openssl"
+      # curl -L "https://github.com/openssl/openssl/archive/OpenSSL_1_1_1c.tar.gz" | \
+      #   untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/openssl" --strip-components=1
+      # cd "${PREFIX}/src/phpvm/php-${target}/libs/openssl"
+      # ./config
+      # echo "CONFIGURED"
+      # make ${MAKEOPTS}
+      # echo "MADE"
+      # sudo make install ${MAKEOPTS}
+      # echo "INSTALLED"
       ;;
   esac
 fi

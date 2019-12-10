@@ -1,16 +1,17 @@
 if [ $install_deps -gt 0 ]; then
   case "$(distro)" in
     alpine)
-      apk add libzip-dev
+      sudo apk add libzip-dev
       ;;
     osx)
-      mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/zlib"
-      curl -L https://www.zlib.net/zlib-1.2.11.tar.gz | \
-        untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/zlib" --strip-components=1
-      cd "${PREFIX}/src/phpvm/php-${target}/libs/zlib"
-      ./configure
-      make ${MAKEOPTS}
-      make install ${MAKEOPTS}
+      brew install libzip zlib
+      # mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/zlib"
+      # curl -L https://www.zlib.net/zlib-1.2.11.tar.gz | \
+      #   untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/zlib" --strip-components=1
+      # cd "${PREFIX}/src/phpvm/php-${target}/libs/zlib"
+      # ./configure
+      # make ${MAKEOPTS}
+      # sudo make install ${MAKEOPTS}
       ;;
   esac
 fi

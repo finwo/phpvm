@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Hard-crash everything
-set -ex
+set -e
 
 VERSION=0.0.1
 distro() {
@@ -31,6 +31,10 @@ version() {
 untar() {
   TARBIN=$(command -v gtar tar | head -n 1)
   ${TARBIN} xzvf "$@"
+}
+ppatch() {
+  PATCHBIN=$(command -v gpatch patch | head -n 1)
+  cat | ${PATCHBIN} "$@"
 }
 contains() {
     local n=$#
@@ -75,6 +79,7 @@ ALLEXTS+=("sockets" "sysvmsg" "sysvsem" "sysvshm" "wddx" "zip" "bcmath")
 ALLEXTS+=("gnu-ld" "mysqli" "pdo-mysql" "curl" "mhash" "pdo-pgsql" "pgsql")
 ALLEXTS+=("openssl" "zlib" "memcached" "memcache" "mongodb" "psr" "phalcon")
 ALLEXTS+=("gearman" "intl")
+PATCHES=()
 EXTS=()
 
 # Track some variables
@@ -92,10 +97,6 @@ while [[ "$#" -gt 0 ]]; do
       shift
       target="$1"
       cmd="use"
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root"
-  exit 1
-fi
       ;;
     --help)
       cmd="help"
@@ -120,6 +121,23 @@ done
 minor=$(echo "${target}" | tr '.' ' ' | awk '{print $2}')
 major=$(echo "${target}" | tr '.' ' ' | awk '{print $1}')
 
+# Fetch patches to include
+if [ "${major}" -eq "7" ] && [ "${minor}" -eq "2" ]; then
+PATCHES+=("RnJvbSA0MDcyYjI3ODcwNzRlZThlMjQ3YTY2Mzk1ODViNDllMTBjNWE1NWZlIE1vbiBTZXAgMTcgMDA6MDA6MDAgMjAwMQpGcm9tOiAiQ2hyaXN0b3BoIE0uIEJlY2tlciIgPGNtYmVja2VyNjlAZ214LmRlPgpEYXRlOiBUdWUsIDIwIE1hciAyMDE4IDE2OjM1OjM5ICswMTAwClN1YmplY3Q6IFtQQVRDSF0gRml4ICM3NjExMzogbWJzdHJpbmcgZG9lcyBub3QgYnVpbGQgd2l0aCBPbmlndXJ1bWEgNi44LjEKCkFzIG9mIE9uaWd1cnVtYSA2LjguMSwgdGhlIHJlZ2V4IHN0cnVjdHVyZSBoYXMgYmVlbiBtb3ZlZCBmcm9tIHRoZQpwdWJsaWMgYG9uaWd1cnVtYS5oYCB0byB0aGUgcHJpdmF0ZSBgcmVnaW50LmhgLiAgVGh1cywgaXQgaXMgbm8gbG9uZ2VyCnBvc3NpYmxlIHRvIGRpcmVjdGx5IGFjY2VzcyB0aGUgc3RydWN0J3MgbWVtYmVycywgYW5kIGFjdHVhbGx5LCB0aGVyZQppcyBubyBuZWVkIHRvLCBzaW5jZSB0aGVyZSBhcmUgcmVzcGVjdGl2ZSBhY2Nlc3NvciBmdW5jdGlvbnMgYXZhaWxhYmxlCmF0IGxlYXN0IG9mIDIuMy4xLgotLS0KIGV4dC9tYnN0cmluZy9waHBfbWJyZWdleC5jIHwgMiArLQogMSBmaWxlIGNoYW5nZWQsIDEgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbigtKQoKZGlmZiAtLWdpdCBhL2V4dC9tYnN0cmluZy9waHBfbWJyZWdleC5jIGIvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKaW5kZXggYTVhNmNkMC4uN2E3MGM2MyAxMDA2NDQKLS0tIGEvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKKysrIGIvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKQEAgLTQ1Miw3ICs0NTIsNyBAQCBzdGF0aWMgcGhwX21iX3JlZ2V4X3QgKnBocF9tYnJlZ2V4X2NvbXBpbGVfcGF0dGVybihjb25zdCBjaGFyICpwYXR0ZXJuLCBpbnQgcGF0bAogCU9uaWdVQ2hhciBlcnJfc3RyW09OSUdfTUFYX0VSUk9SX01FU1NBR0VfTEVOXTsKIAogCXJjID0gemVuZF9oYXNoX3N0cl9maW5kX3B0cigmTUJSRVgoaHRfcmMpLCAoY2hhciAqKXBhdHRlcm4sIHBhdGxlbik7Ci0JaWYgKCFyYyB8fCByYy0+b3B0aW9ucyAhPSBvcHRpb25zIHx8IHJjLT5lbmMgIT0gZW5jIHx8IHJjLT5zeW50YXggIT0gc3ludGF4KSB7CisJaWYgKCFyYyB8fCBvbmlnX2dldF9vcHRpb25zKHJjKSAhPSBvcHRpb25zIHx8IG9uaWdfZ2V0X2VuY29kaW5nKHJjKSAhPSBlbmMgfHwgb25pZ19nZXRfc3ludGF4KHJjKSAhPSBzeW50YXgpIHsKIAkJaWYgKChlcnJfY29kZSA9IG9uaWdfbmV3KCZyZXR2YWwsIChPbmlnVUNoYXIgKilwYXR0ZXJuLCAoT25pZ1VDaGFyICopKHBhdHRlcm4gKyBwYXRsZW4pLCBvcHRpb25zLCBlbmMsIHN5bnRheCwgJmVycl9pbmZvKSkgIT0gT05JR19OT1JNQUwpIHsKIAkJCW9uaWdfZXJyb3JfY29kZV90b19zdHIoZXJyX3N0ciwgZXJyX2NvZGUsICZlcnJfaW5mbyk7CiAJCQlwaHBfZXJyb3JfZG9jcmVmKE5VTEwsIEVfV0FSTklORywgIm1icmVnZXggY29tcGlsZSBlcnI6ICVzIiwgZXJyX3N0cik7Ci0tIAoyLjEuNAo=")
+fi
+if [ "${major}" -eq "7" ] && [ "${minor}" -eq "3" ]; then
+PATCHES+=("RnJvbSA0MDcyYjI3ODcwNzRlZThlMjQ3YTY2Mzk1ODViNDllMTBjNWE1NWZlIE1vbiBTZXAgMTcgMDA6MDA6MDAgMjAwMQpGcm9tOiAiQ2hyaXN0b3BoIE0uIEJlY2tlciIgPGNtYmVja2VyNjlAZ214LmRlPgpEYXRlOiBUdWUsIDIwIE1hciAyMDE4IDE2OjM1OjM5ICswMTAwClN1YmplY3Q6IFtQQVRDSF0gRml4ICM3NjExMzogbWJzdHJpbmcgZG9lcyBub3QgYnVpbGQgd2l0aCBPbmlndXJ1bWEgNi44LjEKCkFzIG9mIE9uaWd1cnVtYSA2LjguMSwgdGhlIHJlZ2V4IHN0cnVjdHVyZSBoYXMgYmVlbiBtb3ZlZCBmcm9tIHRoZQpwdWJsaWMgYG9uaWd1cnVtYS5oYCB0byB0aGUgcHJpdmF0ZSBgcmVnaW50LmhgLiAgVGh1cywgaXQgaXMgbm8gbG9uZ2VyCnBvc3NpYmxlIHRvIGRpcmVjdGx5IGFjY2VzcyB0aGUgc3RydWN0J3MgbWVtYmVycywgYW5kIGFjdHVhbGx5LCB0aGVyZQppcyBubyBuZWVkIHRvLCBzaW5jZSB0aGVyZSBhcmUgcmVzcGVjdGl2ZSBhY2Nlc3NvciBmdW5jdGlvbnMgYXZhaWxhYmxlCmF0IGxlYXN0IG9mIDIuMy4xLgotLS0KIGV4dC9tYnN0cmluZy9waHBfbWJyZWdleC5jIHwgMiArLQogMSBmaWxlIGNoYW5nZWQsIDEgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbigtKQoKZGlmZiAtLWdpdCBhL2V4dC9tYnN0cmluZy9waHBfbWJyZWdleC5jIGIvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKaW5kZXggYTVhNmNkMC4uN2E3MGM2MyAxMDA2NDQKLS0tIGEvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKKysrIGIvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKQEAgLTQ1Miw3ICs0NTIsNyBAQCBzdGF0aWMgcGhwX21iX3JlZ2V4X3QgKnBocF9tYnJlZ2V4X2NvbXBpbGVfcGF0dGVybihjb25zdCBjaGFyICpwYXR0ZXJuLCBpbnQgcGF0bAogCU9uaWdVQ2hhciBlcnJfc3RyW09OSUdfTUFYX0VSUk9SX01FU1NBR0VfTEVOXTsKIAogCXJjID0gemVuZF9oYXNoX3N0cl9maW5kX3B0cigmTUJSRVgoaHRfcmMpLCAoY2hhciAqKXBhdHRlcm4sIHBhdGxlbik7Ci0JaWYgKCFyYyB8fCByYy0+b3B0aW9ucyAhPSBvcHRpb25zIHx8IHJjLT5lbmMgIT0gZW5jIHx8IHJjLT5zeW50YXggIT0gc3ludGF4KSB7CisJaWYgKCFyYyB8fCBvbmlnX2dldF9vcHRpb25zKHJjKSAhPSBvcHRpb25zIHx8IG9uaWdfZ2V0X2VuY29kaW5nKHJjKSAhPSBlbmMgfHwgb25pZ19nZXRfc3ludGF4KHJjKSAhPSBzeW50YXgpIHsKIAkJaWYgKChlcnJfY29kZSA9IG9uaWdfbmV3KCZyZXR2YWwsIChPbmlnVUNoYXIgKilwYXR0ZXJuLCAoT25pZ1VDaGFyICopKHBhdHRlcm4gKyBwYXRsZW4pLCBvcHRpb25zLCBlbmMsIHN5bnRheCwgJmVycl9pbmZvKSkgIT0gT05JR19OT1JNQUwpIHsKIAkJCW9uaWdfZXJyb3JfY29kZV90b19zdHIoZXJyX3N0ciwgZXJyX2NvZGUsICZlcnJfaW5mbyk7CiAJCQlwaHBfZXJyb3JfZG9jcmVmKE5VTEwsIEVfV0FSTklORywgIm1icmVnZXggY29tcGlsZSBlcnI6ICVzIiwgZXJyX3N0cik7Ci0tIAoyLjEuNAo=")
+fi
+if [ "${major}" -eq "7" ] && [ "${minor}" -eq "4" ]; then
+PATCHES+=("RnJvbSA0MDcyYjI3ODcwNzRlZThlMjQ3YTY2Mzk1ODViNDllMTBjNWE1NWZlIE1vbiBTZXAgMTcgMDA6MDA6MDAgMjAwMQpGcm9tOiAiQ2hyaXN0b3BoIE0uIEJlY2tlciIgPGNtYmVja2VyNjlAZ214LmRlPgpEYXRlOiBUdWUsIDIwIE1hciAyMDE4IDE2OjM1OjM5ICswMTAwClN1YmplY3Q6IFtQQVRDSF0gRml4ICM3NjExMzogbWJzdHJpbmcgZG9lcyBub3QgYnVpbGQgd2l0aCBPbmlndXJ1bWEgNi44LjEKCkFzIG9mIE9uaWd1cnVtYSA2LjguMSwgdGhlIHJlZ2V4IHN0cnVjdHVyZSBoYXMgYmVlbiBtb3ZlZCBmcm9tIHRoZQpwdWJsaWMgYG9uaWd1cnVtYS5oYCB0byB0aGUgcHJpdmF0ZSBgcmVnaW50LmhgLiAgVGh1cywgaXQgaXMgbm8gbG9uZ2VyCnBvc3NpYmxlIHRvIGRpcmVjdGx5IGFjY2VzcyB0aGUgc3RydWN0J3MgbWVtYmVycywgYW5kIGFjdHVhbGx5LCB0aGVyZQppcyBubyBuZWVkIHRvLCBzaW5jZSB0aGVyZSBhcmUgcmVzcGVjdGl2ZSBhY2Nlc3NvciBmdW5jdGlvbnMgYXZhaWxhYmxlCmF0IGxlYXN0IG9mIDIuMy4xLgotLS0KIGV4dC9tYnN0cmluZy9waHBfbWJyZWdleC5jIHwgMiArLQogMSBmaWxlIGNoYW5nZWQsIDEgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbigtKQoKZGlmZiAtLWdpdCBhL2V4dC9tYnN0cmluZy9waHBfbWJyZWdleC5jIGIvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKaW5kZXggYTVhNmNkMC4uN2E3MGM2MyAxMDA2NDQKLS0tIGEvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKKysrIGIvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKQEAgLTQ1Miw3ICs0NTIsNyBAQCBzdGF0aWMgcGhwX21iX3JlZ2V4X3QgKnBocF9tYnJlZ2V4X2NvbXBpbGVfcGF0dGVybihjb25zdCBjaGFyICpwYXR0ZXJuLCBpbnQgcGF0bAogCU9uaWdVQ2hhciBlcnJfc3RyW09OSUdfTUFYX0VSUk9SX01FU1NBR0VfTEVOXTsKIAogCXJjID0gemVuZF9oYXNoX3N0cl9maW5kX3B0cigmTUJSRVgoaHRfcmMpLCAoY2hhciAqKXBhdHRlcm4sIHBhdGxlbik7Ci0JaWYgKCFyYyB8fCByYy0+b3B0aW9ucyAhPSBvcHRpb25zIHx8IHJjLT5lbmMgIT0gZW5jIHx8IHJjLT5zeW50YXggIT0gc3ludGF4KSB7CisJaWYgKCFyYyB8fCBvbmlnX2dldF9vcHRpb25zKHJjKSAhPSBvcHRpb25zIHx8IG9uaWdfZ2V0X2VuY29kaW5nKHJjKSAhPSBlbmMgfHwgb25pZ19nZXRfc3ludGF4KHJjKSAhPSBzeW50YXgpIHsKIAkJaWYgKChlcnJfY29kZSA9IG9uaWdfbmV3KCZyZXR2YWwsIChPbmlnVUNoYXIgKilwYXR0ZXJuLCAoT25pZ1VDaGFyICopKHBhdHRlcm4gKyBwYXRsZW4pLCBvcHRpb25zLCBlbmMsIHN5bnRheCwgJmVycl9pbmZvKSkgIT0gT05JR19OT1JNQUwpIHsKIAkJCW9uaWdfZXJyb3JfY29kZV90b19zdHIoZXJyX3N0ciwgZXJyX2NvZGUsICZlcnJfaW5mbyk7CiAJCQlwaHBfZXJyb3JfZG9jcmVmKE5VTEwsIEVfV0FSTklORywgIm1icmVnZXggY29tcGlsZSBlcnI6ICVzIiwgZXJyX3N0cik7Ci0tIAoyLjEuNAo=")
+fi
+if [ "${major}" -eq "7" ] && [ "${minor}" -eq "1" ]; then
+PATCHES+=("RnJvbSA0MDcyYjI3ODcwNzRlZThlMjQ3YTY2Mzk1ODViNDllMTBjNWE1NWZlIE1vbiBTZXAgMTcgMDA6MDA6MDAgMjAwMQpGcm9tOiAiQ2hyaXN0b3BoIE0uIEJlY2tlciIgPGNtYmVja2VyNjlAZ214LmRlPgpEYXRlOiBUdWUsIDIwIE1hciAyMDE4IDE2OjM1OjM5ICswMTAwClN1YmplY3Q6IFtQQVRDSF0gRml4ICM3NjExMzogbWJzdHJpbmcgZG9lcyBub3QgYnVpbGQgd2l0aCBPbmlndXJ1bWEgNi44LjEKCkFzIG9mIE9uaWd1cnVtYSA2LjguMSwgdGhlIHJlZ2V4IHN0cnVjdHVyZSBoYXMgYmVlbiBtb3ZlZCBmcm9tIHRoZQpwdWJsaWMgYG9uaWd1cnVtYS5oYCB0byB0aGUgcHJpdmF0ZSBgcmVnaW50LmhgLiAgVGh1cywgaXQgaXMgbm8gbG9uZ2VyCnBvc3NpYmxlIHRvIGRpcmVjdGx5IGFjY2VzcyB0aGUgc3RydWN0J3MgbWVtYmVycywgYW5kIGFjdHVhbGx5LCB0aGVyZQppcyBubyBuZWVkIHRvLCBzaW5jZSB0aGVyZSBhcmUgcmVzcGVjdGl2ZSBhY2Nlc3NvciBmdW5jdGlvbnMgYXZhaWxhYmxlCmF0IGxlYXN0IG9mIDIuMy4xLgotLS0KIGV4dC9tYnN0cmluZy9waHBfbWJyZWdleC5jIHwgMiArLQogMSBmaWxlIGNoYW5nZWQsIDEgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbigtKQoKZGlmZiAtLWdpdCBhL2V4dC9tYnN0cmluZy9waHBfbWJyZWdleC5jIGIvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKaW5kZXggYTVhNmNkMC4uN2E3MGM2MyAxMDA2NDQKLS0tIGEvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKKysrIGIvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKQEAgLTQ1Miw3ICs0NTIsNyBAQCBzdGF0aWMgcGhwX21iX3JlZ2V4X3QgKnBocF9tYnJlZ2V4X2NvbXBpbGVfcGF0dGVybihjb25zdCBjaGFyICpwYXR0ZXJuLCBpbnQgcGF0bAogCU9uaWdVQ2hhciBlcnJfc3RyW09OSUdfTUFYX0VSUk9SX01FU1NBR0VfTEVOXTsKIAogCXJjID0gemVuZF9oYXNoX3N0cl9maW5kX3B0cigmTUJSRVgoaHRfcmMpLCAoY2hhciAqKXBhdHRlcm4sIHBhdGxlbik7Ci0JaWYgKCFyYyB8fCByYy0+b3B0aW9ucyAhPSBvcHRpb25zIHx8IHJjLT5lbmMgIT0gZW5jIHx8IHJjLT5zeW50YXggIT0gc3ludGF4KSB7CisJaWYgKCFyYyB8fCBvbmlnX2dldF9vcHRpb25zKHJjKSAhPSBvcHRpb25zIHx8IG9uaWdfZ2V0X2VuY29kaW5nKHJjKSAhPSBlbmMgfHwgb25pZ19nZXRfc3ludGF4KHJjKSAhPSBzeW50YXgpIHsKIAkJaWYgKChlcnJfY29kZSA9IG9uaWdfbmV3KCZyZXR2YWwsIChPbmlnVUNoYXIgKilwYXR0ZXJuLCAoT25pZ1VDaGFyICopKHBhdHRlcm4gKyBwYXRsZW4pLCBvcHRpb25zLCBlbmMsIHN5bnRheCwgJmVycl9pbmZvKSkgIT0gT05JR19OT1JNQUwpIHsKIAkJCW9uaWdfZXJyb3JfY29kZV90b19zdHIoZXJyX3N0ciwgZXJyX2NvZGUsICZlcnJfaW5mbyk7CiAJCQlwaHBfZXJyb3JfZG9jcmVmKE5VTEwsIEVfV0FSTklORywgIm1icmVnZXggY29tcGlsZSBlcnI6ICVzIiwgZXJyX3N0cik7Ci0tIAoyLjEuNAo=")
+fi
+if [ "${major}" -eq "7" ] && [ "${minor}" -eq "0" ]; then
+PATCHES+=("RnJvbSA0MDcyYjI3ODcwNzRlZThlMjQ3YTY2Mzk1ODViNDllMTBjNWE1NWZlIE1vbiBTZXAgMTcgMDA6MDA6MDAgMjAwMQpGcm9tOiAiQ2hyaXN0b3BoIE0uIEJlY2tlciIgPGNtYmVja2VyNjlAZ214LmRlPgpEYXRlOiBUdWUsIDIwIE1hciAyMDE4IDE2OjM1OjM5ICswMTAwClN1YmplY3Q6IFtQQVRDSF0gRml4ICM3NjExMzogbWJzdHJpbmcgZG9lcyBub3QgYnVpbGQgd2l0aCBPbmlndXJ1bWEgNi44LjEKCkFzIG9mIE9uaWd1cnVtYSA2LjguMSwgdGhlIHJlZ2V4IHN0cnVjdHVyZSBoYXMgYmVlbiBtb3ZlZCBmcm9tIHRoZQpwdWJsaWMgYG9uaWd1cnVtYS5oYCB0byB0aGUgcHJpdmF0ZSBgcmVnaW50LmhgLiAgVGh1cywgaXQgaXMgbm8gbG9uZ2VyCnBvc3NpYmxlIHRvIGRpcmVjdGx5IGFjY2VzcyB0aGUgc3RydWN0J3MgbWVtYmVycywgYW5kIGFjdHVhbGx5LCB0aGVyZQppcyBubyBuZWVkIHRvLCBzaW5jZSB0aGVyZSBhcmUgcmVzcGVjdGl2ZSBhY2Nlc3NvciBmdW5jdGlvbnMgYXZhaWxhYmxlCmF0IGxlYXN0IG9mIDIuMy4xLgotLS0KIGV4dC9tYnN0cmluZy9waHBfbWJyZWdleC5jIHwgMiArLQogMSBmaWxlIGNoYW5nZWQsIDEgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbigtKQoKZGlmZiAtLWdpdCBhL2V4dC9tYnN0cmluZy9waHBfbWJyZWdleC5jIGIvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKaW5kZXggYTVhNmNkMC4uN2E3MGM2MyAxMDA2NDQKLS0tIGEvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKKysrIGIvZXh0L21ic3RyaW5nL3BocF9tYnJlZ2V4LmMKQEAgLTQ1Miw3ICs0NTIsNyBAQCBzdGF0aWMgcGhwX21iX3JlZ2V4X3QgKnBocF9tYnJlZ2V4X2NvbXBpbGVfcGF0dGVybihjb25zdCBjaGFyICpwYXR0ZXJuLCBpbnQgcGF0bAogCU9uaWdVQ2hhciBlcnJfc3RyW09OSUdfTUFYX0VSUk9SX01FU1NBR0VfTEVOXTsKIAogCXJjID0gemVuZF9oYXNoX3N0cl9maW5kX3B0cigmTUJSRVgoaHRfcmMpLCAoY2hhciAqKXBhdHRlcm4sIHBhdGxlbik7Ci0JaWYgKCFyYyB8fCByYy0+b3B0aW9ucyAhPSBvcHRpb25zIHx8IHJjLT5lbmMgIT0gZW5jIHx8IHJjLT5zeW50YXggIT0gc3ludGF4KSB7CisJaWYgKCFyYyB8fCBvbmlnX2dldF9vcHRpb25zKHJjKSAhPSBvcHRpb25zIHx8IG9uaWdfZ2V0X2VuY29kaW5nKHJjKSAhPSBlbmMgfHwgb25pZ19nZXRfc3ludGF4KHJjKSAhPSBzeW50YXgpIHsKIAkJaWYgKChlcnJfY29kZSA9IG9uaWdfbmV3KCZyZXR2YWwsIChPbmlnVUNoYXIgKilwYXR0ZXJuLCAoT25pZ1VDaGFyICopKHBhdHRlcm4gKyBwYXRsZW4pLCBvcHRpb25zLCBlbmMsIHN5bnRheCwgJmVycl9pbmZvKSkgIT0gT05JR19OT1JNQUwpIHsKIAkJCW9uaWdfZXJyb3JfY29kZV90b19zdHIoZXJyX3N0ciwgZXJyX2NvZGUsICZlcnJfaW5mbyk7CiAJCQlwaHBfZXJyb3JfZG9jcmVmKE5VTEwsIEVfV0FSTklORywgIm1icmVnZXggY29tcGlsZSBlcnI6ICVzIiwgZXJyX3N0cik7Ci0tIAoyLjEuNAo=")
+fi
+
 if [ $major -eq 7 ] && [ $minor -ge 1 ]; then
   CONFOPTS="${CONFOPTS} --enable-intl"
 elif [ $major -gt 7 ]; then
@@ -141,7 +159,7 @@ case "$cmd" in
     if [ $install_deps -gt 0 ]; then
       case "$(distro)" in
         alpine)
-          apk add \
+          sudo apk add \
             autoconf \
             build-base \
             curl-dev \
@@ -158,9 +176,8 @@ case "$cmd" in
     fi
 
     # Ensure required dirs exist
-    mkdir -p "${PREFIX}/src/phpvm"
-    # mkdir -p /var/cache/phpvm
-
+    sudo mkdir -p "${PREFIX}/src/phpvm"
+    sudo chown -R $USER "${PREFIX}/src/phpvm"
 
     # # Download/update memcached repo
     # [ -d "/usr/src/phpvm/ext-memcached" ] && {
@@ -273,22 +290,26 @@ case "$cmd" in
     # }
 
     # Remove old php version
-    rm -rf "${PREFIX}/bin/pear*"
-    rm -rf "${PREFIX}/bin/pecl*"
-    rm -rf "${PREFIX}/bin/phar*"
-    rm -rf "${PREFIX}/bin/php*"
-    rm -rf "${PREFIX}/etc/pear*"
-    rm -rf "${PREFIX}/etc/php*"
-    rm -rf "${PREFIX}/include/php*"
-    rm -rf "${PREFIX}/lib/php*"
-    rm -rf "${PREFIX}/php*"
-    rm -rf "${PREFIX}/sbin/php*"
+    sudo rm -rf "${PREFIX}/bin/pear*"
+    sudo rm -rf "${PREFIX}/bin/pecl*"
+    sudo rm -rf "${PREFIX}/bin/phar*"
+    sudo rm -rf "${PREFIX}/bin/php*"
+    sudo rm -rf "${PREFIX}/etc/pear*"
+    sudo rm -rf "${PREFIX}/etc/php*"
+    sudo rm -rf "${PREFIX}/include/php*"
+    sudo rm -rf "${PREFIX}/lib/php*"
+    sudo rm -rf "${PREFIX}/php*"
+    sudo rm -rf "${PREFIX}/sbin/php*"
 
     # Download and unpack php
     [ -f "${PREFIX}/src/phpvm/php-${target}/configure" ] || {
       mkdir -p "${PREFIX}/src/phpvm/php-${target}"
       curl -L "http://php.net/get/php-${target}.tar.gz/from/this/mirror" | \
         untar - -C "${PREFIX}/src/phpvm"
+      cd "${PREFIX}/src/phpvm/php-${target}"
+      for patchContent in ${PATCHES[@]}; do
+        echo -e "$patchContent" | base64 --decode | ppatch -p1
+      done
     }
 
     # Build conf opts
@@ -369,7 +390,7 @@ fi
 if [ $install_deps -gt 0 ]; then
   case "$(distro)" in
     alpine)
-      apk add gnu-libiconv-dev
+      sudo apk add gnu-libiconv-dev
       ;;
     osx)
       mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/iconv"
@@ -378,7 +399,17 @@ if [ $install_deps -gt 0 ]; then
       cd "${PREFIX}/src/phpvm/php-${target}/libs/iconv"
       ./configure
       make ${MAKEOPTS}
-      make install ${MAKEOPTS}
+      sudo make install ${MAKEOPTS}
+      ;;
+  esac
+fi
+if [ $install_deps -gt 0 ]; then
+  case "$(distro)" in
+    alpine)
+      sudo apk add libmemcached-dev
+      ;;
+    osx)
+      brew install libmemcached
       ;;
   esac
 fi
@@ -388,49 +419,44 @@ if [ $install_deps -gt 0 ]; then
       apk add libmemcached-dev
       ;;
     osx)
-      # brew install libmemcached
+      brew install libmemcached
       ;;
   esac
 fi
 if [ $install_deps -gt 0 ]; then
   case "$(distro)" in
     alpine)
-      apk add libmemcached-dev
+      sudo apk add openssl-dev
       ;;
     osx)
-      # brew install libmemcached
+      brew install openssl
+      # mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/openssl"
+      # curl -L "https://github.com/openssl/openssl/archive/OpenSSL_1_1_1c.tar.gz" | \
+      #   untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/openssl" --strip-components=1
+      # cd "${PREFIX}/src/phpvm/php-${target}/libs/openssl"
+      # ./config
+      # echo "CONFIGURED"
+      # make ${MAKEOPTS}
+      # echo "MADE"
+      # sudo make install ${MAKEOPTS}
+      # echo "INSTALLED"
       ;;
   esac
 fi
 if [ $install_deps -gt 0 ]; then
   case "$(distro)" in
     alpine)
-      apk add openssl-dev
+      sudo apk add libzip-dev
       ;;
     osx)
-      mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/openssl"
-      curl -L https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz | \
-        untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/openssl" --strip-components=1
-      cd "${PREFIX}/src/phpvm/php-${target}/libs/openssl"
-      ./config
-      make ${MAKEOPTS}
-      make install ${MAKEOPTS}
-      ;;
-  esac
-fi
-if [ $install_deps -gt 0 ]; then
-  case "$(distro)" in
-    alpine)
-      apk add libzip-dev
-      ;;
-    osx)
-      mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/zlib"
-      curl -L https://www.zlib.net/zlib-1.2.11.tar.gz | \
-        untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/zlib" --strip-components=1
-      cd "${PREFIX}/src/phpvm/php-${target}/libs/zlib"
-      ./configure
-      make ${MAKEOPTS}
-      make install ${MAKEOPTS}
+      brew install libzip zlib
+      # mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/zlib"
+      # curl -L https://www.zlib.net/zlib-1.2.11.tar.gz | \
+      #   untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/zlib" --strip-components=1
+      # cd "${PREFIX}/src/phpvm/php-${target}/libs/zlib"
+      # ./configure
+      # make ${MAKEOPTS}
+      # sudo make install ${MAKEOPTS}
       ;;
   esac
 fi

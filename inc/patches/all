@@ -1,0 +1,5 @@
+#include <patches/7.2/0000-mbstring-oniguruma-6.8.patch>
+#include <patches/7.3/0000-mbstring-oniguruma-6.8.patch>
+#include <patches/7.4/0000-mbstring-oniguruma-6.8.patch>
+#include <patches/7.1/0000-mbstring-oniguruma-6.8.patch>
+#include <patches/7.0/0000-mbstring-oniguruma-6.8.patch>
