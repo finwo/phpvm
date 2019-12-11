@@ -7,6 +7,7 @@
 #include "../ftp/deps"
 #include "../gearman/deps"
 #include "../gnu-ld/deps"
+#include "../iconv/deps"
 #include "../intl/deps"
 #include "../mbstring/deps"
 #include "../memcache/deps"

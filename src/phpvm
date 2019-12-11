@@ -43,7 +43,7 @@ EXTS=()
 
 # Track some variables
 cmd=list
-target="7.0.33"
+target="7.3.12"
 install_deps=0
 
 # Parse args
@@ -67,10 +67,15 @@ while [[ "$#" -gt 0 ]]; do
       for EXT in ${ALLEXTS[@]}; do
         EXTS+=("$EXT")
       done
+      echo "EXTS: ${EXTS[@]}"
       ;;
     --ext|-e)
       shift
       EXTS+=("$1")
+      ;;
+    --prefix)
+      shift
+      PREFIX="${PREFIX}"
       ;;
   esac
   shift
@@ -82,17 +87,6 @@ major=$(echo "${target}" | tr '.' ' ' | awk '{print $1}')
 
 # Fetch patches to include
 #include <patches/all>
-
-if [ $major -eq 7 ] && [ $minor -ge 1 ]; then
-  CONFOPTS="${CONFOPTS} --enable-intl"
-elif [ $major -gt 7 ]; then
-  CONFOPTS="${CONFOPTS} --enable-intl"
-fi
-
-# # Build configure options
-# for SUPPORT in ${SUPPORTS[@]}; do
-#   CONFOPTS="${CONFOPTS} --with-${SUPPORT}"
-# done
 
 # Run command
 case "$cmd" in
@@ -263,12 +257,12 @@ case "$cmd" in
     # Install dependencies
 #include <ext/all/deps>
 
+    echo "CONFOPTS: ${CONFOPTS}"
+
     # Configure and build php
     cd "${PREFIX}/src/phpvm/php-${target}"
     ./configure ${CONFOPTS} \
       && make ${MAKEOPTS}
-
-    echo "PIZZA"
 
     # # Download tarball if missing
     # tarball="/var/cache/phpvm/php-${target}.tar.gz"
@@ -279,9 +273,9 @@ case "$cmd" in
     #   }
     # }
 
-    # # Install chosen version
-    # cd "/usr/src/phpvm/php-${target}"
-    # make install
+    # Install chosen version
+    cd "${PREFIX}/src/phpvm/php-${target}"
+    make install
 
     # # Go to the ext-memcached source
     # cd /usr/src/phpvm/ext-memcached

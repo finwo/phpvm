@@ -7,6 +7,7 @@
 #include "../ftp/flags"
 #include "../gearman/flags"
 #include "../gnu-ld/flags"
+#include "../iconv/flags"
 #include "../intl/flags"
 #include "../mbstring/flags"
 #include "../memcache/flags"
