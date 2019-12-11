@@ -205,7 +205,6 @@ case "$cmd" in
       cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
       git fetch --all --tags
       git checkout $(version phalcon/cphalcon)
-      git pull
     } || {
       git clone --depth 1 https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon
       cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
