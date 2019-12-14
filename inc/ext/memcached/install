@@ -1,0 +1,10 @@
+if contains "${EXTS[@]}" "memcached"; then
+  echo "  - memcached"
+  cd "${PREFIX}/src/phpvm/php-${target}/ext/memcached"
+  printf "\n" | phpize
+  printf "\n" | ./configure --disable-memcached-sasl
+  make $MAKEOPTS
+  sudo make install
+
+  echo "extension=memcached.so" | sudo tee -a "${PREFIX}/lib/php.ini"
+fi

@@ -1,0 +1,24 @@
+if [ $install_deps -gt 0 ]; then
+
+  if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/mongodb" ]; then
+    mongoversion=$(version mongodb/mongo-php-driver)
+
+
+    # Download mongodb ext
+    sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
+    sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
+    tarball="https://github.com/mongodb/mongo-php-driver/releases/download/${mongoversion}/mongodb-${mongoversion}.tgz"
+    curl -L "${tarball}" | \
+      untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
+
+    # # Download libmongoc
+    # sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/mongodb/src/libmongoc"
+    # sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/mongodb/src/libmongoc"
+    # tarball="https://github.com/mongodb/mongo-c-driver/archive/master.tar.gz"
+    # curl -L "${tarball}" | \
+    #   untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/mongodb/src/libmongoc"
+
+  fi
+
+
+fi

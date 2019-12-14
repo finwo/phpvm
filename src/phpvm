@@ -118,25 +118,6 @@ case "$cmd" in
     sudo mkdir -p "${PREFIX}/src/phpvm"
     sudo chown -R $USER "${PREFIX}/src/phpvm"
 
-    # # Download/update memcached repo
-    # [ -d "/usr/src/phpvm/ext-memcached" ] && {
-    #   cd /usr/src/phpvm/ext-memcached
-    #   git fetch --all --tags
-    # } || {
-    #   git clone --depth 1 https://github.com/php-memcached-dev/php-memcached /usr/src/phpvm/ext-memcached
-    #   cd /usr/src/phpvm/ext-memcached
-    #   git fetch --all --tags
-    # }
-    # if [ "${major}" -lt 7 ]; then
-    #   git checkout REL2_0
-    #   git branch --set-upstream-to=origin/REL2_0
-    #   git pull
-    # else
-    #   git checkout master
-    #   git branch --set-upstream-to=master
-    #   git pull
-    # fi
-
     # # Download/update memcache repo
     # [ -d "/usr/src/phpvm/ext-memcache" ] && {
     #   cd /usr/src/phpvm/ext-memcache
@@ -156,18 +137,6 @@ case "$cmd" in
     #   git pull
     # fi
 
-    # # Download/update mongodb repo
-    # [ -d "/usr/src/phpvm/ext-mongodb" ] && {
-    #   cd /usr/src/phpvm/ext-mongodb
-    #   git fetch --all --tags
-    #   git pull
-    #   git submodule update --init --recursive --force
-    # } || {
-    #   git clone --depth 1 https://github.com/mongodb/mongo-php-driver /usr/src/phpvm/ext-mongodb
-    #   cd /usr/src/phpvm/ext-mongodb
-    #   git fetch --all --tags
-    #   git submodule update --init --recursive --force
-    # }
 
     # # Download/update psr repo
     # [ -d "/usr/src/phpvm/ext-psr" ] && {
@@ -242,7 +211,8 @@ case "$cmd" in
 
     # Download and unpack php
     [ -f "${PREFIX}/src/phpvm/php-${target}/configure" ] || {
-      mkdir -p "${PREFIX}/src/phpvm/php-${target}"
+      sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}"
+      sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}"
       curl -L "http://php.net/get/php-${target}.tar.gz/from/this/mirror" | \
         untar - -C "${PREFIX}/src/phpvm"
       cd "${PREFIX}/src/phpvm/php-${target}"
@@ -252,54 +222,29 @@ case "$cmd" in
     }
 
     # Build conf opts
+    echo "Adding config flags"
 #include <ext/all/flags>
 
     # Install dependencies
+    echo "Preparing dependencies"
 #include <ext/all/deps>
 
     echo "CONFOPTS: ${CONFOPTS}"
 
     # Configure and build php
+    echo "Building PHP"
     cd "${PREFIX}/src/phpvm/php-${target}"
     ./configure ${CONFOPTS} \
       && make ${MAKEOPTS}
 
-    # # Download tarball if missing
-    # tarball="/var/cache/phpvm/php-${target}.tar.gz"
-    # [ -f "${tarball}" ] || {
-    #   curl -L "http://php.net/get/php-${target}.tar.gz/from/this/mirror" > "${tarball}" || {
-    #     rm -rf "${tarball}"
-    #     break
-    #   }
-    # }
-
     # Install chosen version
+    echo "Installing PHP"
     cd "${PREFIX}/src/phpvm/php-${target}"
-    make install
+    sudo make install
 
-    # # Go to the ext-memcached source
-    # cd /usr/src/phpvm/ext-memcached
-    # printf "\n" | phpize
-    # printf "\n" | ./configure --disable-memcached-sasl
-    # make $MAKEOPTS
-    # make install
-    # echo "extension=memcached.so" >> /usr/local/lib/php.ini
-
-    # # Compile & install ext-memcache
-    # cd /usr/src/phpvm/ext-memcache
-    # printf "\n" | phpize
-    # printf "\n" | ./configure --enable-memcache
-    # make $MAKEOPTS
-    # make install
-    # echo "extension=memcache.so" >> /usr/local/lib/php.ini
-
-    # # Compile & install ext-mongodb
-    # cd /usr/src/phpvm/ext-mongodb
-    # printf "\n" | phpize
-    # printf "\n" | ./configure
-    # make $MAKEOPTS
-    # make install
-    # echo "extension=mongodb.so" >> /usr/local/lib/php.ini
+    # Install extra modules
+    echo "Installing extra modules"
+#include <ext/all/install>
 
     # # Compile & install ext-pr
     # cd /usr/src/phpvm/ext-psr
