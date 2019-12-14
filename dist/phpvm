@@ -90,7 +90,7 @@ install_deps=0
 # Parse args
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
-    list|version|help|extensions)
+    list|version|help|extensions|update)
       cmd="$1"
       ;;
     use)
@@ -147,6 +147,11 @@ fi
 case "$cmd" in
   list)
     ls /usr/src/phpvm/ | grep "php-"
+    ;;
+  update)
+    SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
+    SCRIPTNAME="$(basename $0)"
+    curl -L https://finwo.github.io/phpvm/dist/phpvm > "${SCRIPTPATH}/${SCRIPTNAME}"
     ;;
   use)
 
@@ -493,6 +498,7 @@ fi
     echo "  list        show the list of installed php versions"
     echo "  version     show the version of the currently in-use php"
     echo "  use         switch to a (different) php version"
+    echo "  update      self-update ${name}"
     echo "  help        show this usage"
     echo ""
     echo "Options:"
