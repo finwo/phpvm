@@ -174,7 +174,6 @@ case "$cmd" in
     sudo mkdir -p "${PREFIX}/src/phpvm"
     sudo chown -R $USER "${PREFIX}/src/phpvm"
 
-
     # Remove old php version
     sudo rm -rf "${PREFIX}/bin/pear*"
     sudo rm -rf "${PREFIX}/bin/pecl*"
