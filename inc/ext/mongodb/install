@@ -2,7 +2,7 @@ if contains "${EXTS[@]}" "mongodb"; then
   echo "  - mongodb"
   cd "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
   printf "\n" | phpize
-  printf "\n" | ./configure
+  printf "\n" | ./configure -C
   make $MAKEOPTS
   sudo make install
 

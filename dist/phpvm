@@ -30,7 +30,7 @@ version() {
 }
 untar() {
   TARBIN=$(command -v gtar tar | head -n 1)
-  ${TARBIN} xzvf "$@"
+  ${TARBIN} xzf "$@"
 }
 ppatch() {
   PATCHBIN=$(command -v gpatch patch | head -n 1)
@@ -78,7 +78,7 @@ ALLEXTS+=("fpm" "calendar" "dba" "exif" "mbstring" "ftp" "pcntl" "soap")
 ALLEXTS+=("sockets" "sysvmsg" "sysvsem" "sysvshm" "wddx" "zip" "bcmath")
 ALLEXTS+=("gnu-ld" "mysqli" "pdo-mysql" "curl" "mhash" "pdo-pgsql" "pgsql")
 ALLEXTS+=("openssl" "zlib" "memcached" "memcache" "mongodb" "psr" "phalcon")
-ALLEXTS+=("gearman" "intl")
+ALLEXTS+=("intl")
 PATCHES=()
 EXTS=()
 
@@ -157,7 +157,6 @@ case "$cmd" in
             autoconf \
             build-base \
             curl-dev \
-            gearman-dev \
             git \
             grep \
             icu-dev \
@@ -166,6 +165,8 @@ case "$cmd" in
             postgresql-dev \
             ;
           ;;
+        osx)
+          ;;
       esac
     fi
 
@@ -173,84 +174,6 @@ case "$cmd" in
     sudo mkdir -p "${PREFIX}/src/phpvm"
     sudo chown -R $USER "${PREFIX}/src/phpvm"
 
-    # # Download/update memcache repo
-    # [ -d "/usr/src/phpvm/ext-memcache" ] && {
-    #   cd /usr/src/phpvm/ext-memcache
-    #   git fetch --all
-    # } || {
-    #   git clone --depth 1 https://github.com/websupport-sk/pecl-memcache /usr/src/phpvm/ext-memcache
-    #   cd /usr/src/phpvm/ext-memcache
-    #   git fetch --all
-    # }
-    # if [ $major -lt 7 ]; then
-    #   git checkout NON_BLOCKING_IO
-    #   git branch --set-upstream-to=origin/NON_BLOCKING_IO
-    #   git pull
-    # else
-    #   git checkout "NON_BLOCKING_IO_php${major}"
-    #   git branch "--set-upstream-to=origin/NON_BLOCKING_IO_php${major}"
-    #   git pull
-    # fi
-
-
-    # # Download/update psr repo
-    # [ -d "/usr/src/phpvm/ext-psr" ] && {
-    #   cd /usr/src/phpvm/ext-psr
-    #   git fetch --all --tags
-    #   git pull
-    # } || {
-    #   git clone --depth 1 https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr
-    #   cd /usr/src/phpvm/ext-psr
-    #   git fetch --all --tags
-    # }
-
-    # # Download/update phalcon repo
-    # [ -d "/usr/src/phpvm/ext-phalcon" ] && {
-    #   cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-    #   git fetch --all --tags
-    #   git checkout $(version phalcon/cphalcon)
-    #   git pull
-    # } || {
-    #   git clone --depth 1 https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon
-    #   cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-    #   git fetch --all --tags
-    #   git checkout $(version phalcon/cphalcon)
-    # }
-
-    # # Download/update gearman repo
-    # [ -d "/usr/src/phpvm/ext-gearman" ] && {
-    #   cd /usr/src/phpvm/ext-gearman
-    #   git fetch --all --tags
-    #   git pull
-    # } || {
-    #   git clone --depth 1 https://github.com/wcgallego/pecl-gearman /usr/src/phpvm/ext-gearman
-    #   cd /usr/src/phpvm/ext-gearman
-    #   git fetch --all --tags
-    # }
-
-    # # Ensure libgearman
-    # updatedb
-    # locate gearman.h | grep -E '^(\/usr(\/local)?)?\/include' || {
-
-    #   # Download tarball if missing
-    #   gmversion=$(version gearman/gearmand)
-    #   tarball="/var/cache/phpvm/lib-gearman-${gmversion}.tar.gz"
-    #   [ -f "${tarball}" ] || {
-    #     curl -L "https://github.com/gearman/gearmand/releases/download/${gmversion}/gearmand-${gmversion}.tar.gz" > "${tarball}" || {
-    #       rm -rf "${tarball}"
-    #       break
-    #     }
-    #   }
-
-    #   # unpack libgearman
-    #   mkdir -p /usr/src/phpvm/lib-gearman
-    #   untar "${tarball}" --overwrite --strip-components=1 -C "/usr/src/phpvm/lib-gearman"
-
-    #   cd /usr/src/phpvm/lib-gearman
-    #   ./configure
-    #   make ${MAKEOPTS}
-    #   make install
-    # }
 
     # Remove old php version
     sudo rm -rf "${PREFIX}/bin/pear*"
@@ -261,6 +184,7 @@ case "$cmd" in
     sudo rm -rf "${PREFIX}/etc/php*"
     sudo rm -rf "${PREFIX}/include/php*"
     sudo rm -rf "${PREFIX}/lib/php*"
+    sudo rm -rf "${PREFIX}/lib/php.ini"
     sudo rm -rf "${PREFIX}/php*"
     sudo rm -rf "${PREFIX}/sbin/php*"
 
@@ -364,14 +288,7 @@ if [ $install_deps -gt 0 ]; then
       sudo apk add gnu-libiconv-dev
       ;;
     osx)
-      brew reinstall libiconv
-      # mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/iconv"
-      # curl -L https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz | \
-      #   untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/iconv" --strip-components=1
-      # cd "${PREFIX}/src/phpvm/php-${target}/libs/iconv"
-      # ./configure --prefix=${PREFIX}
-      # make ${MAKEOPTS}
-      # sudo make install ${MAKEOPTS}
+      brew install libiconv
       ;;
   esac
 fi
@@ -406,24 +323,23 @@ if [ $install_deps -gt 0 ]; then
       brew install libmemcached
       ;;
   esac
+fi
 
-  # Download memcached repo
-  if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/memcached" ]; then
-    sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/memcached"
-    sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/memcached"
-    tarball="https://github.com/php-memcached-dev/php-memcached/archive/master.tar.gz"
-    if [ "${major}" -lt 7 ]; then
-      tarball="https://github.com/php-memcached-dev/php-memcached/archive/REL2_0.tar.gz"
-    fi
-    curl -L "${tarball}" | \
-      untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/memcached"
+# Download memcached repo
+if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/memcached" ]; then
+  sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/memcached"
+  sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/memcached"
+  tarball="https://github.com/php-memcached-dev/php-memcached/archive/master.tar.gz"
+  if [ "${major}" -lt 7 ]; then
+    tarball="https://github.com/php-memcached-dev/php-memcached/archive/REL2_0.tar.gz"
   fi
+  curl -L "${tarball}" | \
+    untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/memcached"
 fi
 if [ $install_deps -gt 0 ]; then
 
   if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/mongodb" ]; then
     mongoversion=$(version mongodb/mongo-php-driver)
-
 
     # Download mongodb ext
     sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
@@ -431,13 +347,6 @@ if [ $install_deps -gt 0 ]; then
     tarball="https://github.com/mongodb/mongo-php-driver/releases/download/${mongoversion}/mongodb-${mongoversion}.tgz"
     curl -L "${tarball}" | \
       untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
-
-    # # Download libmongoc
-    # sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/mongodb/src/libmongoc"
-    # sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/mongodb/src/libmongoc"
-    # tarball="https://github.com/mongodb/mongo-c-driver/archive/master.tar.gz"
-    # curl -L "${tarball}" | \
-    #   untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/mongodb/src/libmongoc"
 
   fi
 
@@ -464,6 +373,30 @@ if [ $install_deps -gt 0 ]; then
   esac
 fi
 if [ $install_deps -gt 0 ]; then
+
+  # Download phalcon repo
+  if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/phalcon" ]; then
+    phalconversion=$(version phalcon/cphalcon)
+    sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/phalcon"
+    sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/phalcon"
+    tarball="https://github.com/phalcon/cphalcon/archive/${phalconversion}.tar.gz"
+    curl -L "${tarball}" | \
+      untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/phalcon"
+  fi
+
+fi
+if [ $install_deps -gt 0 ]; then
+
+  # Download psr repo
+  if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/psr" ]; then
+    sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/psr"
+    sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/psr"
+    tarball="https://github.com/jbboehr/php-psr/archive/master.tar.gz"
+    curl -L "${tarball}" | \
+      untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/psr"
+  fi
+fi
+if [ $install_deps -gt 0 ]; then
   case "$(distro)" in
     alpine)
       sudo apk add libzip-dev
@@ -486,7 +419,7 @@ fi
     # Configure and build php
     echo "Building PHP"
     cd "${PREFIX}/src/phpvm/php-${target}"
-    ./configure ${CONFOPTS} \
+    ./configure -C ${CONFOPTS} \
       && make ${MAKEOPTS}
 
     # Install chosen version
@@ -510,7 +443,7 @@ if contains "${EXTS[@]}" "memcached"; then
   echo "  - memcached"
   cd "${PREFIX}/src/phpvm/php-${target}/ext/memcached"
   printf "\n" | phpize
-  printf "\n" | ./configure --disable-memcached-sasl
+  printf "\n" | ./configure -C --disable-memcached-sasl
   make $MAKEOPTS
   sudo make install
 
@@ -520,39 +453,32 @@ if contains "${EXTS[@]}" "mongodb"; then
   echo "  - mongodb"
   cd "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
   printf "\n" | phpize
-  printf "\n" | ./configure
+  printf "\n" | ./configure -C
   make $MAKEOPTS
   sudo make install
 
   echo "extension=mongodb.so" | sudo tee -a "${PREFIX}/lib/php.ini"
 fi
+if contains "${EXTS[@]}" "phalcon"; then
+  echo "  - phalcon"
+  cd "${PREFIX}/src/phpvm/php-${target}/ext/phalcon/build/php${major}/safe"
+  printf "\n" | phpize
+  printf "\n" | ./configure -C --enable-phalcon
+  make $MAKEOPTS
+  sudo make install
 
-    # # Compile & install ext-pr
-    # cd /usr/src/phpvm/ext-psr
-    # printf "\n" | phpize
-    # printf "\n" | ./configure
-    # make $MAKEOPTS
-    # make install
-    # echo "extension=psr.so" >> /usr/local/lib/php.ini
+  echo "extension=phalcon.so" | sudo tee -a "${PREFIX}/lib/php.ini"
+fi
+if contains "${EXTS[@]}" "psr"; then
+  echo "  - psr"
+  cd "${PREFIX}/src/phpvm/php-${target}/ext/psr"
+  printf "\n" | phpize
+  printf "\n" | ./configure -C
+  make $MAKEOPTS
+  sudo make install
 
-    # # Compile & install ext-phalcon
-    # cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-    # phpize
-    # ./configure --enable-phalcon
-    # make clean
-    # make ${MAKEOPTS}
-    # make install
-    # echo "extension=phalcon.so" >> /usr/local/lib/php.ini
-
-    # # Build and install gearman
-    # cd /usr/src/phpvm/ext-gearman
-    # git pull
-    # phpize
-    # ./configure
-    # make clean
-    # make ${MAKEOPTS}
-    # make install
-    # echo "extension=gearman.so" >> /usr/local/lib/php.ini
+  echo "extension=psr.so" | sudo tee -a "${PREFIX}/lib/php.ini"
+fi
 
    ;;
   help)

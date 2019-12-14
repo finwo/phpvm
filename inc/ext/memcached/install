@@ -2,7 +2,7 @@ if contains "${EXTS[@]}" "memcached"; then
   echo "  - memcached"
   cd "${PREFIX}/src/phpvm/php-${target}/ext/memcached"
   printf "\n" | phpize
-  printf "\n" | ./configure --disable-memcached-sasl
+  printf "\n" | ./configure -C --disable-memcached-sasl
   make $MAKEOPTS
   sudo make install
 

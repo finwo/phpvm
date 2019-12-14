@@ -102,7 +102,6 @@ case "$cmd" in
             autoconf \
             build-base \
             curl-dev \
-            gearman-dev \
             git \
             grep \
             icu-dev \
@@ -111,6 +110,8 @@ case "$cmd" in
             postgresql-dev \
             ;
           ;;
+        osx)
+          ;;
       esac
     fi
 
@@ -118,84 +119,6 @@ case "$cmd" in
     sudo mkdir -p "${PREFIX}/src/phpvm"
     sudo chown -R $USER "${PREFIX}/src/phpvm"
 
-    # # Download/update memcache repo
-    # [ -d "/usr/src/phpvm/ext-memcache" ] && {
-    #   cd /usr/src/phpvm/ext-memcache
-    #   git fetch --all
-    # } || {
-    #   git clone --depth 1 https://github.com/websupport-sk/pecl-memcache /usr/src/phpvm/ext-memcache
-    #   cd /usr/src/phpvm/ext-memcache
-    #   git fetch --all
-    # }
-    # if [ $major -lt 7 ]; then
-    #   git checkout NON_BLOCKING_IO
-    #   git branch --set-upstream-to=origin/NON_BLOCKING_IO
-    #   git pull
-    # else
-    #   git checkout "NON_BLOCKING_IO_php${major}"
-    #   git branch "--set-upstream-to=origin/NON_BLOCKING_IO_php${major}"
-    #   git pull
-    # fi
-
-
-    # # Download/update psr repo
-    # [ -d "/usr/src/phpvm/ext-psr" ] && {
-    #   cd /usr/src/phpvm/ext-psr
-    #   git fetch --all --tags
-    #   git pull
-    # } || {
-    #   git clone --depth 1 https://github.com/jbboehr/php-psr /usr/src/phpvm/ext-psr
-    #   cd /usr/src/phpvm/ext-psr
-    #   git fetch --all --tags
-    # }
-
-    # # Download/update phalcon repo
-    # [ -d "/usr/src/phpvm/ext-phalcon" ] && {
-    #   cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-    #   git fetch --all --tags
-    #   git checkout $(version phalcon/cphalcon)
-    #   git pull
-    # } || {
-    #   git clone --depth 1 https://github.com/phalcon/cphalcon /usr/src/phpvm/ext-phalcon
-    #   cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-    #   git fetch --all --tags
-    #   git checkout $(version phalcon/cphalcon)
-    # }
-
-    # # Download/update gearman repo
-    # [ -d "/usr/src/phpvm/ext-gearman" ] && {
-    #   cd /usr/src/phpvm/ext-gearman
-    #   git fetch --all --tags
-    #   git pull
-    # } || {
-    #   git clone --depth 1 https://github.com/wcgallego/pecl-gearman /usr/src/phpvm/ext-gearman
-    #   cd /usr/src/phpvm/ext-gearman
-    #   git fetch --all --tags
-    # }
-
-    # # Ensure libgearman
-    # updatedb
-    # locate gearman.h | grep -E '^(\/usr(\/local)?)?\/include' || {
-
-    #   # Download tarball if missing
-    #   gmversion=$(version gearman/gearmand)
-    #   tarball="/var/cache/phpvm/lib-gearman-${gmversion}.tar.gz"
-    #   [ -f "${tarball}" ] || {
-    #     curl -L "https://github.com/gearman/gearmand/releases/download/${gmversion}/gearmand-${gmversion}.tar.gz" > "${tarball}" || {
-    #       rm -rf "${tarball}"
-    #       break
-    #     }
-    #   }
-
-    #   # unpack libgearman
-    #   mkdir -p /usr/src/phpvm/lib-gearman
-    #   untar "${tarball}" --overwrite --strip-components=1 -C "/usr/src/phpvm/lib-gearman"
-
-    #   cd /usr/src/phpvm/lib-gearman
-    #   ./configure
-    #   make ${MAKEOPTS}
-    #   make install
-    # }
 
     # Remove old php version
     sudo rm -rf "${PREFIX}/bin/pear*"
@@ -206,6 +129,7 @@ case "$cmd" in
     sudo rm -rf "${PREFIX}/etc/php*"
     sudo rm -rf "${PREFIX}/include/php*"
     sudo rm -rf "${PREFIX}/lib/php*"
+    sudo rm -rf "${PREFIX}/lib/php.ini"
     sudo rm -rf "${PREFIX}/php*"
     sudo rm -rf "${PREFIX}/sbin/php*"
 
@@ -234,7 +158,7 @@ case "$cmd" in
     # Configure and build php
     echo "Building PHP"
     cd "${PREFIX}/src/phpvm/php-${target}"
-    ./configure ${CONFOPTS} \
+    ./configure -C ${CONFOPTS} \
       && make ${MAKEOPTS}
 
     # Install chosen version
@@ -245,33 +169,6 @@ case "$cmd" in
     # Install extra modules
     echo "Installing extra modules"
 #include <ext/all/install>
-
-    # # Compile & install ext-pr
-    # cd /usr/src/phpvm/ext-psr
-    # printf "\n" | phpize
-    # printf "\n" | ./configure
-    # make $MAKEOPTS
-    # make install
-    # echo "extension=psr.so" >> /usr/local/lib/php.ini
-
-    # # Compile & install ext-phalcon
-    # cd "/usr/src/phpvm/ext-phalcon/build/php${major}/64bits"
-    # phpize
-    # ./configure --enable-phalcon
-    # make clean
-    # make ${MAKEOPTS}
-    # make install
-    # echo "extension=phalcon.so" >> /usr/local/lib/php.ini
-
-    # # Build and install gearman
-    # cd /usr/src/phpvm/ext-gearman
-    # git pull
-    # phpize
-    # ./configure
-    # make clean
-    # make ${MAKEOPTS}
-    # make install
-    # echo "extension=gearman.so" >> /usr/local/lib/php.ini
 
    ;;
   help)

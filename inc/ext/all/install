@@ -5,7 +5,6 @@
 #include "../exif/install"
 #include "../fpm/install"
 #include "../ftp/install"
-#include "../gearman/install"
 #include "../gnu-ld/install"
 #include "../iconv/install"
 #include "../intl/install"

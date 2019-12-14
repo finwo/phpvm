@@ -5,7 +5,6 @@
 #include "../exif/flags"
 #include "../fpm/flags"
 #include "../ftp/flags"
-#include "../gearman/flags"
 #include "../gnu-ld/flags"
 #include "../iconv/flags"
 #include "../intl/flags"
