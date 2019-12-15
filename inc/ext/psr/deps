@@ -1,11 +1,8 @@
-if [ $install_deps -gt 0 ]; then
-
-  # Download psr repo
-  if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/psr" ]; then
-    sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/psr"
-    sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/psr"
-    tarball="https://github.com/jbboehr/php-psr/archive/master.tar.gz"
-    curl -L "${tarball}" | \
-      untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/psr"
-  fi
+# Download psr repo
+if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/psr" ]; then
+  sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/psr"
+  sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/psr"
+  tarball="https://github.com/jbboehr/php-psr/archive/master.tar.gz"
+  curl -L "${tarball}" | \
+    untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/psr"
 fi

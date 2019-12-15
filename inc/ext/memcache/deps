@@ -7,16 +7,16 @@ if [ $install_deps -gt 0 ]; then
       brew install libmemcached
       ;;
   esac
+fi
 
-  # Download memcache repo
-  if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/memcache" ]; then
-    sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
-    sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
-    tarball="https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO.tar.gz"
-    if [ "$major" -eq 7 ]; then
-      tarball="https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO_php7.tar.gz"
-    fi
-    curl -L "${tarball}" | \
-      untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
+# Download memcache repo
+if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/memcache" ]; then
+  sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
+  sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
+  tarball="https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO.tar.gz"
+  if [ "$major" -eq 7 ]; then
+    tarball="https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO_php7.tar.gz"
   fi
+  curl -L "${tarball}" | \
+    untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
 fi
