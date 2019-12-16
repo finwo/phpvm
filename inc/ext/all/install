@@ -1,3 +1,4 @@
+#include "../gearman/install"
 #include "../memcache/install"
 #include "../memcached/install"
 #include "../mongodb/install"

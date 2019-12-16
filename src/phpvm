@@ -11,6 +11,13 @@ set -e
 #include <fn/ppatch>
 #include <fn/contains>
 
+indent() {
+  NAME=$1
+  while read line; do
+    echo "$NAME : $line"
+  done
+}
+
 export CFLAGS=
 export CONFOPTS=
 export MAKEOPTS="-j$(($(ncpu)+1))"

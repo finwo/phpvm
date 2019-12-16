@@ -47,6 +47,13 @@ contains() {
     return 1
 }
 
+indent() {
+  NAME=$1
+  while read line; do
+    echo "$NAME : $line"
+  done
+}
+
 export CFLAGS=
 export CONFOPTS=
 export MAKEOPTS="-j$(($(ncpu)+1))"
@@ -78,7 +85,7 @@ ALLEXTS+=("fpm" "calendar" "dba" "exif" "mbstring" "ftp" "pcntl" "soap")
 ALLEXTS+=("sockets" "sysvmsg" "sysvsem" "sysvshm" "wddx" "zip" "bcmath")
 ALLEXTS+=("gnu-ld" "mysqli" "pdo-mysql" "curl" "mhash" "pdo-pgsql" "pgsql")
 ALLEXTS+=("openssl" "zlib" "memcached" "memcache" "mongodb" "psr" "phalcon")
-ALLEXTS+=("intl")
+ALLEXTS+=("intl" "gearman")
 PATCHES=()
 EXTS=()
 
@@ -289,6 +296,38 @@ fi
 if [ $install_deps -gt 0 ]; then
   case "$(distro)" in
     alpine)
+      sudo apk add gearman-dev
+      ;;
+    osx)
+
+      # Download & install gearmand
+      if ! [ -d "${PREFIX}/src/phpvm/gearmand" ]; then
+        gearmanversion=$(version gearman/gearmand)
+        sudo mkdir -p "${PREFIX}/src/phpvm/gearmand"
+        sudo chown -R ${USER} "${PREFIX}/src/phpvm/gearmand"
+        tarball="https://github.com/gearman/gearmand/releases/download/${gearmanversion}/gearmand-${gearmanversion}.tar.gz"
+        curl -L "${tarball}" | \
+          untar - --strip-components=1 -C "${PREFIX}/src/phpvm/gearmand"
+        ./configure | indent gm
+        make ${MAKEOPTS}
+        sudo make install
+      fi
+
+      ;;
+  esac
+fi
+
+if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/gearman" ]; then
+  # Download gearman ext
+  sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/gearman"
+  sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/gearman"
+  tarball="https://github.com/wcgallego/pecl-gearman/archive/gearman-2.0.6.tar.gz"
+  curl -L "${tarball}" | \
+    untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/gearman"
+fi
+if [ $install_deps -gt 0 ]; then
+  case "$(distro)" in
+    alpine)
       sudo apk add gnu-libiconv-dev
       ;;
     osx)
@@ -402,6 +441,16 @@ fi
 
     # Install extra modules
     echo "Installing extra modules"
+if contains "${EXTS[@]}" "gearman"; then
+  echo "  - gearman"
+  cd "${PREFIX}/src/phpvm/php-${target}/ext/gearman"
+  printf "\n" | phpize
+  printf "\n" | ./configure -C
+  make $MAKEOPTS
+  sudo make install
+
+  echo "extension=gearman.so" | sudo tee -a "${PREFIX}/lib/php.ini"
+fi
 if contains "${EXTS[@]}" "memcache"; then
   echo "  - memcache"
   cd "${PREFIX}/src/phpvm/php-${target}/ext/memcache"

@@ -1,3 +1,4 @@
+#include "../gearman/deps"
 #include "../iconv/deps"
 #include "../memcache/deps"
 #include "../memcached/deps"
