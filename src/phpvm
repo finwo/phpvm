@@ -20,7 +20,7 @@ if [ -z "${PREFIX+x}" ]; then
 fi
 
 if [ -z "${CC+x}" ]; then
-  export CC=$(which gcc-9 gcc | head -n 1)
+  export CC=$(which clang gcc-9 gcc | head -n 1)
 fi
 
 # Gentoo stuff

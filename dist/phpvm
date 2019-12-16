@@ -56,7 +56,7 @@ if [ -z "${PREFIX+x}" ]; then
 fi
 
 if [ -z "${CC+x}" ]; then
-  export CC=$(which gcc-9 gcc | head -n 1)
+  export CC=$(which clang gcc-9 gcc | head -n 1)
 fi
 
 # Gentoo stuff
@@ -305,18 +305,18 @@ if [ $install_deps -gt 0 ]; then
       brew install libmemcached
       ;;
   esac
+fi
 
-  # Download memcache repo
-  if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/memcache" ]; then
-    sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
-    sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
-    tarball="https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO.tar.gz"
-    if [ "$major" -eq 7 ]; then
-      tarball="https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO_php7.tar.gz"
-    fi
-    curl -L "${tarball}" | \
-      untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
+# Download memcache repo
+if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/memcache" ]; then
+  sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
+  sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
+  tarball="https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO.tar.gz"
+  if [ "$major" -eq 7 ]; then
+    tarball="https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO_php7.tar.gz"
   fi
+  curl -L "${tarball}" | \
+    untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/memcache"
 fi
 if [ $install_deps -gt 0 ]; then
   case "$(distro)" in
@@ -340,21 +340,14 @@ if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/memcached" ]; then
   curl -L "${tarball}" | \
     untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/memcached"
 fi
-if [ $install_deps -gt 0 ]; then
-
-  if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/mongodb" ]; then
-    mongoversion=$(version mongodb/mongo-php-driver)
-
-    # Download mongodb ext
-    sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
-    sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
-    tarball="https://github.com/mongodb/mongo-php-driver/releases/download/${mongoversion}/mongodb-${mongoversion}.tgz"
-    curl -L "${tarball}" | \
-      untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
-
-  fi
-
-
+if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/mongodb" ]; then
+  mongoversion=$(version mongodb/mongo-php-driver)
+  # Download mongodb ext
+  sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
+  sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
+  tarball="https://github.com/mongodb/mongo-php-driver/releases/download/${mongoversion}/mongodb-${mongoversion}.tgz"
+  curl -L "${tarball}" | \
+    untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
 fi
 if [ $install_deps -gt 0 ]; then
   case "$(distro)" in
@@ -363,42 +356,25 @@ if [ $install_deps -gt 0 ]; then
       ;;
     osx)
       brew install openssl
-      # mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/openssl"
-      # curl -L "https://github.com/openssl/openssl/archive/OpenSSL_1_1_1c.tar.gz" | \
-      #   untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/openssl" --strip-components=1
-      # cd "${PREFIX}/src/phpvm/php-${target}/libs/openssl"
-      # ./config
-      # echo "CONFIGURED"
-      # make ${MAKEOPTS}
-      # echo "MADE"
-      # sudo make install ${MAKEOPTS}
-      # echo "INSTALLED"
       ;;
   esac
 fi
-if [ $install_deps -gt 0 ]; then
-
-  # Download phalcon repo
-  if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/phalcon" ]; then
-    phalconversion=$(version phalcon/cphalcon)
-    sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/phalcon"
-    sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/phalcon"
-    tarball="https://github.com/phalcon/cphalcon/archive/${phalconversion}.tar.gz"
-    curl -L "${tarball}" | \
-      untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/phalcon"
-  fi
-
+# Download phalcon repo
+if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/phalcon" ]; then
+  phalconversion=$(version phalcon/cphalcon)
+  sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/phalcon"
+  sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/phalcon"
+  tarball="https://github.com/phalcon/cphalcon/archive/${phalconversion}.tar.gz"
+  curl -L "${tarball}" | \
+    untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/phalcon"
 fi
-if [ $install_deps -gt 0 ]; then
-
-  # Download psr repo
-  if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/psr" ]; then
-    sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/psr"
-    sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/psr"
-    tarball="https://github.com/jbboehr/php-psr/archive/master.tar.gz"
-    curl -L "${tarball}" | \
-      untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/psr"
-  fi
+# Download psr repo
+if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/psr" ]; then
+  sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/psr"
+  sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/psr"
+  tarball="https://github.com/jbboehr/php-psr/archive/master.tar.gz"
+  curl -L "${tarball}" | \
+    untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/psr"
 fi
 if [ $install_deps -gt 0 ]; then
   case "$(distro)" in
@@ -407,13 +383,6 @@ if [ $install_deps -gt 0 ]; then
       ;;
     osx)
       brew install libzip zlib
-      # mkdir -p "${PREFIX}/src/phpvm/php-${target}/libs/zlib"
-      # curl -L https://www.zlib.net/zlib-1.2.11.tar.gz | \
-      #   untar - -C "${PREFIX}/src/phpvm/php-${target}/libs/zlib" --strip-components=1
-      # cd "${PREFIX}/src/phpvm/php-${target}/libs/zlib"
-      # ./configure
-      # make ${MAKEOPTS}
-      # sudo make install ${MAKEOPTS}
       ;;
   esac
 fi
