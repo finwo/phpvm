@@ -5,6 +5,22 @@ if [ $install_deps -gt 0 ]; then
       ;;
     osx)
 
+      # Download libiconv
+      if ! [ -d "${PREFIX}/src/phpvm/libiconv" ]; then
+        tarball="https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz"
+        mkdir -p "${PREFIX}/src/phpvm/libiconv"
+        curl -L "${tarball}" | \
+          untar - --strip-components=1 -C "${PREFIX}/src/phpvm/libiconv"
+      fi
+
+      # Build/install libiconv
+      if ! [ -f "${PREFIX}/src/phpvm/libiconv/Makefile" ]; then
+        cd "${PREFIX}/src/phpvm/libiconv"
+        ./configure
+        make ${MAKEOPTS}
+        sudo make install
+      fi
+
       # Download & install gearmand
       if ! [ -d "${PREFIX}/src/phpvm/gearmand" ]; then
         gearmanversion=$(version gearman/gearmand)
@@ -13,6 +29,11 @@ if [ $install_deps -gt 0 ]; then
         tarball="https://github.com/gearman/gearmand/releases/download/${gearmanversion}/gearmand-${gearmanversion}.tar.gz"
         curl -L "${tarball}" | \
           untar - --strip-components=1 -C "${PREFIX}/src/phpvm/gearmand"
+      fi
+
+      # Build/install gearmand
+      if ! [ -f "${PREFIX}/src/phpvm/gearmand/Makefile" ]; then
+        cd "${PREFIX}/src/phpvm/gearmand"
         ./configure | indent gm
         make ${MAKEOPTS}
         sudo make install

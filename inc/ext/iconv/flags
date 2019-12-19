@@ -1,5 +1,3 @@
-if [[ "$(distro)" == "osx" ]]; then
-  CONFOPTS="${CONFOPTS} --with-iconv=shared,/usr/local/opt/libiconv"
-else
+# if contains "${EXTS[@]}" "iconv"; then
   CONFOPTS="${CONFOPTS} --with-iconv"
-fi
+# fi

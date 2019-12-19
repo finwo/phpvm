@@ -178,6 +178,15 @@ case "$cmd" in
             ;
           ;;
         osx)
+          brew install binutils
+          brew install diffutils
+          brew install gnu-sed
+          brew install gnu-tar
+          brew install gpatch
+          brew install gzip
+          brew install m4
+          brew install make
+          brew install wget
           ;;
       esac
     fi
@@ -237,11 +246,9 @@ fi
 if contains "${EXTS[@]}" "gnu-ld"; then
   CONFOPTS="${CONFOPTS} --with-gnu-ld"
 fi
-if [[ "$(distro)" == "osx" ]]; then
-  CONFOPTS="${CONFOPTS} --with-iconv=shared,/usr/local/opt/libiconv"
-else
+# if contains "${EXTS[@]}" "iconv"; then
   CONFOPTS="${CONFOPTS} --with-iconv"
-fi
+# fi
 if contains "${EXTS[@]}" "mbstring"; then
   CONFOPTS="${CONFOPTS} --enable-mbstring"
 fi
@@ -300,6 +307,22 @@ if [ $install_deps -gt 0 ]; then
       ;;
     osx)
 
+      # Download libiconv
+      if ! [ -d "${PREFIX}/src/phpvm/libiconv" ]; then
+        tarball="https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz"
+        mkdir -p "${PREFIX}/src/phpvm/libiconv"
+        curl -L "${tarball}" | \
+          untar - --strip-components=1 -C "${PREFIX}/src/phpvm/libiconv"
+      fi
+
+      # Build/install libiconv
+      if ! [ -f "${PREFIX}/src/phpvm/libiconv/Makefile" ]; then
+        cd "${PREFIX}/src/phpvm/libiconv"
+        ./configure
+        make ${MAKEOPTS}
+        sudo make install
+      fi
+
       # Download & install gearmand
       if ! [ -d "${PREFIX}/src/phpvm/gearmand" ]; then
         gearmanversion=$(version gearman/gearmand)
@@ -308,6 +331,11 @@ if [ $install_deps -gt 0 ]; then
         tarball="https://github.com/gearman/gearmand/releases/download/${gearmanversion}/gearmand-${gearmanversion}.tar.gz"
         curl -L "${tarball}" | \
           untar - --strip-components=1 -C "${PREFIX}/src/phpvm/gearmand"
+      fi
+
+      # Build/install gearmand
+      if ! [ -f "${PREFIX}/src/phpvm/gearmand/Makefile" ]; then
+        cd "${PREFIX}/src/phpvm/gearmand"
         ./configure | indent gm
         make ${MAKEOPTS}
         sudo make install
@@ -421,7 +449,23 @@ if [ $install_deps -gt 0 ]; then
       sudo apk add libzip-dev
       ;;
     osx)
-      brew install libzip zlib
+
+      # Download libiconv
+      if ! [ -d "${PREFIX}/src/phpvm/zlib" ]; then
+        tarball="https://www.zlib.net/zlib-1.2.11.tar.gz"
+        mkdir -p "${PREFIX}/src/phpvm/zlib"
+        curl -L "${tarball}" | \
+          untar - --strip-components=1 -C "${PREFIX}/src/phpvm/zlib"
+      fi
+
+      # Build/install zlib
+      if ! [ -f "${PREFIX}/src/phpvm/zlib/zlib.a" ]; then
+        cd "${PREFIX}/src/phpvm/zlib"
+        ./configure
+        make ${MAKEOPTS}
+        sudo make install
+      fi
+
       ;;
   esac
 fi

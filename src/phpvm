@@ -123,6 +123,15 @@ case "$cmd" in
             ;
           ;;
         osx)
+          brew install binutils
+          brew install diffutils
+          brew install gnu-sed
+          brew install gnu-tar
+          brew install gpatch
+          brew install gzip
+          brew install m4
+          brew install make
+          brew install wget
           ;;
       esac
     fi
