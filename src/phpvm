@@ -27,7 +27,7 @@ if [ -z "${PREFIX+x}" ]; then
 fi
 
 if [ -z "${CC+x}" ]; then
-  export CC=$(which clang gcc-9 gcc | head -n 1)
+  export CC=$(command -v clang gcc-9 gcc | head -n 1)
 fi
 
 # Gentoo stuff
@@ -161,7 +161,7 @@ case "$cmd" in
         untar - -C "${PREFIX}/src/phpvm"
       cd "${PREFIX}/src/phpvm/php-${target}"
       for patchContent in ${PATCHES[@]}; do
-        echo -e "$patchContent" | base64 --decode | ppatch -p1
+        echo -e "$patchContent" | base64 --decode | ppatch -p1 -f || echo ""
       done
     }
 

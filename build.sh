@@ -14,7 +14,7 @@ rm -rf inc/patches
 
 # Include all patches
 mkdir inc/patches
-find patches | while read filename; do
+find patches | sort | while read filename; do
   if [ -d $filename ]; then
     continue
   fi
