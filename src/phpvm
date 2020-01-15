@@ -156,19 +156,6 @@ case "$cmd" in
       git pull
     fi
 
-    # Download/update mongodb repo
-    [ -d "/usr/src/phpvm/ext-mongodb" ] && {
-      cd /usr/src/phpvm/ext-mongodb
-      git fetch --all --tags
-      git pull
-      git submodule update --init --recursive --force
-    } || {
-      git clone --depth 1 https://github.com/mongodb/mongo-php-driver /usr/src/phpvm/ext-mongodb
-      cd /usr/src/phpvm/ext-mongodb
-      git fetch --all --tags
-      git submodule update --init --recursive --force
-    }
-
     # Download/update psr repo
     [ -d "/usr/src/phpvm/ext-psr" ] && {
       cd /usr/src/phpvm/ext-psr
@@ -272,12 +259,7 @@ case "$cmd" in
     make install
     echo "extension=memcache.so" >> /usr/local/lib/php.ini
 
-    # Compile & install ext-mongodb
-    cd /usr/src/phpvm/ext-mongodb
-    printf "\n" | phpize
-    printf "\n" | ./configure
-    make $MAKEOPTS
-    make install
+    pecl install mongodb
     echo "extension=mongodb.so" >> /usr/local/lib/php.ini
 
     # Compile & install ext-pr
