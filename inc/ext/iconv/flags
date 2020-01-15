@@ -1,3 +1,0 @@
-# if contains "${EXTS[@]}" "iconv"; then
-  CONFOPTS="${CONFOPTS} --with-iconv"
-# fi

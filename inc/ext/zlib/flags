@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "zlib"; then
-  CONFOPTS="${CONFOPTS} --with-zlib"
-fi

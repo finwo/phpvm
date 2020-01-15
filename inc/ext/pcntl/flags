@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "pcntl"; then
-  CONFOPTS="${CONFOPTS} --enable-pcntl"
-fi

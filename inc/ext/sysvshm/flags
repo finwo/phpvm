@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "sysvshm"; then
-  CONFOPTS="${CONFOPTS} --enable-sysvshm"
-fi

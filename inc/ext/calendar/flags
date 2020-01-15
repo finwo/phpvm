@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "calendar"; then
-  CONFOPTS="${CONFOPTS} --enable-calendar"
-fi

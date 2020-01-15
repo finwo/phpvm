@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "sysvsem"; then
-  CONFOPTS="${CONFOPTS} --enable-sysvsem"
-fi

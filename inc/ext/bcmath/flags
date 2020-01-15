@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "bcmath"; then
-  CONFOPTS="${CONFOPTS} --enable-bcmath"
-fi

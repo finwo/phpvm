@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "pdo-pgsql"; then
-  CONFOPTS="${CONFOPTS} --with-pdo-pgsql"
-fi

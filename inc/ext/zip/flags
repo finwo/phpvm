@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "zip"; then
-  CONFOPTS="${CONFOPTS} --enable-zip"
-fi

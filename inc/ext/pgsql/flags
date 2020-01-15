@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "pgsql"; then
-  CONFOPTS="${CONFOPTS} --with-pgsql"
-fi

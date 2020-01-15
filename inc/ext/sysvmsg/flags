@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "sysvmsg"; then
-  CONFOPTS="${CONFOPTS} --enable-sysvmsg"
-fi

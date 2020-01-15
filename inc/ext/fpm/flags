@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "fpm"; then
-  CONFOPTS="${CONFOPTS} --enable-fpm"
-fi

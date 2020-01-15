@@ -1,7 +1,0 @@
-ncpu() {
-  if command -v nproc &>/dev/null; then
-    nproc
-  else
-    echo 1
-  fi
-}

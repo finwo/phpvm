@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "mhash"; then
-  CONFOPTS="${CONFOPTS} --with-mhash"
-fi

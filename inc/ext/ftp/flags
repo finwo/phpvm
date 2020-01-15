@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "ftp"; then
-  CONFOPTS="${CONFOPTS} --enable-ftp"
-fi

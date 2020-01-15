@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "xslt"; then
-  CONFOPTS="${CONFOPTS} --with-xsl"
-fi

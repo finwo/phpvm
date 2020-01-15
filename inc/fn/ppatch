@@ -1,4 +1,0 @@
-ppatch() {
-  PATCHBIN=$(command -v gpatch patch | head -n 1)
-  cat | ${PATCHBIN} "$@"
-}

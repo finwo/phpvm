@@ -1,3 +1,0 @@
-if contains "${EXTS[@]}" "wddx"; then
-  CONFOPTS="${CONFOPTS} --enable-wddx"
-fi
