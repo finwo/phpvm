@@ -1,0 +1,3 @@
+if contains "${EXTS[@]}" "dba"; then
+  CONFOPTS="${CONFOPTS} --enable-dba"
+fi

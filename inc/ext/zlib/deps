@@ -1,0 +1,26 @@
+if [ $install_deps -gt 0 ]; then
+  case "$(distro)" in
+    alpine)
+      sudo apk add libzip-dev
+      ;;
+    osx)
+
+      # Download libiconv
+      if ! [ -d "${PREFIX}/src/phpvm/zlib" ]; then
+        tarball="https://www.zlib.net/zlib-1.2.11.tar.gz"
+        mkdir -p "${PREFIX}/src/phpvm/zlib"
+        curl -L "${tarball}" | \
+          untar - --strip-components=1 -C "${PREFIX}/src/phpvm/zlib"
+      fi
+
+      # Build/install zlib
+      if ! [ -f "${PREFIX}/src/phpvm/zlib/zlib.a" ]; then
+        cd "${PREFIX}/src/phpvm/zlib"
+        ./configure
+        make ${MAKEOPTS}
+        sudo make install
+      fi
+
+      ;;
+  esac
+fi

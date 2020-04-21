@@ -1,0 +1,10 @@
+if contains "${EXTS[@]}" "mongodb"; then
+  echo "  - mongodb"
+  cd "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
+  printf "\n" | phpize
+  printf "\n" | ./configure -C
+  make $MAKEOPTS
+  sudo make install
+
+  echo "extension=mongodb.so" | sudo tee -a "${PREFIX}/lib/php.ini"
+fi

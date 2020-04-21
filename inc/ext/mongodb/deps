@@ -1,0 +1,9 @@
+if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/mongodb" ]; then
+  mongoversion=$(version mongodb/mongo-php-driver)
+  # Download mongodb ext
+  sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
+  sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
+  tarball="https://github.com/mongodb/mongo-php-driver/releases/download/${mongoversion}/mongodb-${mongoversion}.tgz"
+  curl -L "${tarball}" | \
+    untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/mongodb"
+fi

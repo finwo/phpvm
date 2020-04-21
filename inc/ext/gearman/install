@@ -1,0 +1,10 @@
+if contains "${EXTS[@]}" "gearman"; then
+  echo "  - gearman"
+  cd "${PREFIX}/src/phpvm/php-${target}/ext/gearman"
+  printf "\n" | phpize
+  printf "\n" | ./configure -C
+  make $MAKEOPTS
+  sudo make install
+
+  echo "extension=gearman.so" | sudo tee -a "${PREFIX}/lib/php.ini"
+fi

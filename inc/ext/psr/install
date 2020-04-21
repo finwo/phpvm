@@ -1,0 +1,10 @@
+if contains "${EXTS[@]}" "psr"; then
+  echo "  - psr"
+  cd "${PREFIX}/src/phpvm/php-${target}/ext/psr"
+  printf "\n" | phpize
+  printf "\n" | ./configure -C
+  make $MAKEOPTS
+  sudo make install
+
+  echo "extension=psr.so" | sudo tee -a "${PREFIX}/lib/php.ini"
+fi

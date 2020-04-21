@@ -1,0 +1,4 @@
+untar() {
+  TARBIN=$(command -v gtar tar | head -n 1)
+  ${TARBIN} xzf "$@"
+}

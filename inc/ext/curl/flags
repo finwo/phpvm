@@ -1,0 +1,3 @@
+if contains "${EXTS[@]}" "curl"; then
+  CONFOPTS="${CONFOPTS} --with-curl"
+fi

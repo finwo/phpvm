@@ -1,0 +1,53 @@
+if [ $install_deps -gt 0 ]; then
+  case "$(distro)" in
+    alpine)
+      sudo apk add gearman-dev
+      ;;
+    osx)
+
+      # Download libiconv
+      if ! [ -d "${PREFIX}/src/phpvm/libiconv" ]; then
+        tarball="https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz"
+        mkdir -p "${PREFIX}/src/phpvm/libiconv"
+        curl -L "${tarball}" | \
+          untar - --strip-components=1 -C "${PREFIX}/src/phpvm/libiconv"
+      fi
+
+      # Build/install libiconv
+      if ! [ -f "${PREFIX}/src/phpvm/libiconv/Makefile" ]; then
+        cd "${PREFIX}/src/phpvm/libiconv"
+        ./configure
+        make ${MAKEOPTS}
+        sudo make install
+      fi
+
+      # Download & install gearmand
+      if ! [ -d "${PREFIX}/src/phpvm/gearmand" ]; then
+        gearmanversion=$(version gearman/gearmand)
+        sudo mkdir -p "${PREFIX}/src/phpvm/gearmand"
+        sudo chown -R ${USER} "${PREFIX}/src/phpvm/gearmand"
+        tarball="https://github.com/gearman/gearmand/releases/download/${gearmanversion}/gearmand-${gearmanversion}.tar.gz"
+        curl -L "${tarball}" | \
+          untar - --strip-components=1 -C "${PREFIX}/src/phpvm/gearmand"
+      fi
+
+      # Build/install gearmand
+      if ! [ -f "${PREFIX}/src/phpvm/gearmand/Makefile" ]; then
+        cd "${PREFIX}/src/phpvm/gearmand"
+        ./configure | indent gm
+        make ${MAKEOPTS}
+        sudo make install
+      fi
+
+      ;;
+  esac
+fi
+
+if ! [ -d "${PREFIX}/src/phpvm/php-${target}/ext/gearman" ]; then
+  # Download gearman ext
+  sudo mkdir -p "${PREFIX}/src/phpvm/php-${target}/ext/gearman"
+  sudo chown -R ${USER} "${PREFIX}/src/phpvm/php-${target}/ext/gearman"
+  tarball="https://github.com/wcgallego/pecl-gearman/archive/gearman-2.0.6.tar.gz"
+  curl -L "${tarball}" | \
+    untar - --strip-components=1 -C "${PREFIX}/src/phpvm/php-${target}/ext/gearman"
+fi

@@ -1,0 +1,3 @@
+if contains "${EXTS[@]}" "soap"; then
+  CONFOPTS="${CONFOPTS} --enable-soap"
+fi

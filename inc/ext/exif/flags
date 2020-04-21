@@ -1,0 +1,3 @@
+if contains "${EXTS[@]}" "exif"; then
+  CONFOPTS="${CONFOPTS} --enable-exif"
+fi

@@ -1,0 +1,6 @@
+#include "../gearman/install"
+#include "../memcache/install"
+#include "../memcached/install"
+#include "../mongodb/install"
+#include "../phalcon/install"
+#include "../psr/install"
