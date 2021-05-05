@@ -136,9 +136,9 @@ case "$cmd" in
       git fetch --all --tags
     }
     if [ "${major}" -lt 7 ]; then
-      git checkout REL2_0
-      git branch --set-upstream-to=origin/REL2_0
-      git pull
+      git checkout 2.2.0
+      # git branch --set-upstream-to=origin/REL2_0
+      # git pull
     else
       git checkout master
       git branch --set-upstream-to=master
