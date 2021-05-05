@@ -42,6 +42,7 @@ if [ -f /etc/phpvmrc ]; then
   source /etc/phpvmrc
 fi
 
+# <<<<<<< Updated upstream
 # Build-in extensions
 BUILDINS=()
 BUILDINS+=("fpm" "calendar" "dba" "exif" "mbstring" "ftp" "pcntl" "soap")
@@ -55,6 +56,13 @@ SUPPORTS+=("openssl" "zlib")
 # Ensure required dirs exist
 mkdir -p /usr/src/phpvm
 mkdir -p /var/cache/phpvm
+#=======
+# # Extensions
+# #include <ext/all/list>
+#PATCHES=()
+#EXTS=()
+#LIBS=()
+#>>>>>>> Stashed changes
 
 # Track some variables
 cmd=list
